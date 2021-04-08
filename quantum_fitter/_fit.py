@@ -15,9 +15,9 @@ class CreateFit:
         self._params_dict = {}
         self._frequency, self._phase, self._upperBound, self._lowerBound, self.
 
-    def set_conds(self, value_name, initial_value=None, fixed=False,
+    def set_conds(self, value_name: str, initial_value=None, fixed=False,
                   frequency=None, phase=None, up_bound=None, lo_bound=None):
-        self.freq =
+        self.freq = 1
 
 
     def do_fit(self, model):
