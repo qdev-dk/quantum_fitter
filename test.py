@@ -1,23 +1,21 @@
 import sys
 import quantum_fitter as qf
-
-# Create a instance of Qfit
-a = qf.CreateFit()
-
-# upper bound, lower bound, ....., relation
-params_dict = {"a": 5,
-               "b": 5}
-
-def linear_model(x, a, b):
-    y = a*x + b
-    return y
+from numpy import sqrt, pi, exp
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-a.set_model(linear_model)  # Probably a better way, either send in a function or string like "Exponential decay"
+def gaussian(x, amp, cen, wid):
+    """1-d gaussian: gaussian(x, amp, cen, wid)"""
+    return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
-# a.set_params(params_dict)  # Dictionary is harder to remember. Set the individual variables might be easier.
-a.set_params('a', val=0, upbound=1, lobound=-1)  # May add more values
+x = np.linspace(0, 10, 500)
+y = gaussian(x, 8, 5, 0.6) + np.random.randn(500)
+params_ini = [5, 5, 1]
 
-a.do_fit()  # Or alternatively a.expdecay()?
+a = qf.QFit(x, y, gaussian, params_ini)
+a.set_params('amp', 5)
+a.do_fit()
 
-a.q_plot()
+# a.pretty_print()
+plt.show()
