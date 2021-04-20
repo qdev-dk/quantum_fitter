@@ -29,6 +29,9 @@ a.pretty_print()
 plt.show()
 
 """
-
 from ._fit import QFit
+try:
+    from lmfit import Model
+except ImportError:
+    print('Why do you use this package with !!! lmfit !!! not installed')
 
