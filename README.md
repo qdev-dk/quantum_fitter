@@ -28,7 +28,6 @@ If print pdf, use **pdf_print**. if don't want figure output, use pdf_print(plot
 
 ## One example: ##
 
-==========================================
 ```python
 import quantum_fitter as qf
 from numpy import sqrt, pi, exp
@@ -59,5 +58,5 @@ a.do_fit()
 a.pdf_print()
 plt.show()
 ```
-<img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" />
-<img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
+<img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
+
