@@ -38,6 +38,19 @@ class QFit:
                    , brute_step=None):
         self._params.add(name, value, vary, minimum, maximum, expression, brute_step)
 
+    def fit_params(self, name: str = None):
+        if name is None:
+            return self.result.values
+        return self.result.values[name]
+
+    def err_params(self, name: str = None):
+        if name is None:
+            return self._params_stderr()
+        return self._params_stderr()[name]
+
+    def fit_values(self):
+        return self.result.best_fit
+
     def do_fit(self):
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
         print(self.result.fit_report())
@@ -56,7 +69,8 @@ class QFit:
         '''Basic function for plotting the result of a fit'''
         fit_params, error_params, fit_value = self.result.best_values, self._params_stderr(), \
                                               self.result.best_fit.flatten()
-        fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+        _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
+        fig, ax = plt.subplots(1, 1, figsize=_fig_size)
         # Add the original data
         data_color = 'C0' if plot_settings is None else plot_settings.get('data_color', 'C0')
         ax.plot(self._datax, self._datay, '.', label='Data', color=data_color, markersize=10, zorder=10)
@@ -78,7 +92,7 @@ class QFit:
                 ax.set_ylim(plot_settings['y_lim'])
         ax.legend()
         title = 'Data source not given' if plot_settings is None else plot_settings.get('plot_title', 'no name given')
-        ax.set_title('Datasource: ' + title + ' Fit type: ' + str(self._qmodel.name))
+        ax.set_title('Datasource: ' + title + '\n Fit type: ' + str(self._qmodel.name))
         # Check if use wants figure and return if needed:
 
         try:
@@ -87,14 +101,14 @@ class QFit:
         except:
             pass
 
-    def pdf_print(self, plot_settings=None):
+    def pdf_print(self, filename=None, plot_settings=None):
         import datetime
         from matplotlib.backends.backend_pdf import PdfPages
 
+        if not filename:
+            filename = 'qf_fit.pdf'
         # Create the PdfPages object to which we will save the pages:
-        # The with statement makes sure that the PdfPages object is closed properly at
-        # the end of the block, even if an Exception occurs.
-        with PdfPages('qf_test.pdf') as pdf:
+        with PdfPages(filename) as pdf:
 
             # if don't wanna output figure, only want pdf pages, do it here.
             if self._fig == 0:

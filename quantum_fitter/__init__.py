@@ -1,6 +1,8 @@
 """
 To use the easy Qfit package, you need to first initialize an instance by
 ins = quantum_fitter.Qfit(x, y, model, params_init); where params_init is a list for initial value
+
+
 Then, use ins.do_fit() to fit through lmfit.
 If you want to change any parameters' properties, use ins.set_params() to alter.
 
