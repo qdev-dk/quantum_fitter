@@ -26,7 +26,7 @@ plot_settings = {
 If print pdf, use **pdf_print**. if don't want figure output, use pdf_print(plot_settings)
 
 
-##One example:##
+## One example: ##
 
 ==========================================
 ```python
