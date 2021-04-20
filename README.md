@@ -10,6 +10,7 @@ set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=N
 Then, use ins.do_fit() to fit through lmfit.
 
 If plot, use pretty_print(plot_settings), with following dict.
+
 plot_settings = {
     'x_label': 'Time (us)',
     'y_label': 'Voltage (mV)',
