@@ -58,5 +58,5 @@ a.do_fit()
 a.pdf_print()
 plt.show()
 ```
-![alt text](https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF "Happy Spinning Morten")
-![alt text](https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF "Cheerful Spinning Morten")
+![alt text](https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF =30x30 "Happy Spinning Morten")
+![alt text](https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF =30x30 "Cheerful Spinning Morten")
