@@ -1,42 +1,48 @@
 # Quantum_fitter
-The purpose of making this package is to shorten the time we deal with the data, and make it easier to analyse. To use the easy Qfit package, you need to first initialize an instance by 
+<p align="center">
+  <img src="https://img.shields.io/static/v1?style=for-the-badge&label=code-status&message=Good!&color=green"/>
+  <img src="https://img.shields.io/static/v1?style=for-the-badge&label=initial-commit&message=Kian-Gao&color=inactive"/>
+    <img src="https://img.shields.io/static/v1?style=for-the-badge&label=maintainer&message=Kian-Gao&color=inactive"/>
+</p>
+
+The purpose of making this package is to provide a uniform, easy-to-use fitting protocol that everyone can share. It's highly flexible, yet pretty easy to use. . To use the `Qfit` package, you initialize an initialize an instance with your `x`-data, `y`-data, and the models you want to fit to as well as the initial guesses for parameters:
 ```python
 qfit = quantum_fitter.Qfit(x, y, ['GaussianModel', 'LinearModel'], params_init); 
 ```
-Where params_init (can be empty) is a list (which is in sequence of your function parameters) or dict (with name: value) for initial value.
+Where `params_init` can be a dict of the type `{'amplitude': initial_guess}` (or, in the case of a user-defined model, it can be a list, where the ordering reflects the order in which the user-defined model accepts parameters (see example below)), with initial values of the free parameters in the model. It can be an empty list, to let the fitter try to find initial values itself. An example of `params_init` for the `Gaussian + Linear`--model, initialized above:
 ```python
-params_ini = {'intercept': 0,
+params_init = {'intercept': 0,
               'slope': 0,
               'amplitude': 5,
               'center': 5,
               'sigma': 1}
 ```
-You can use your own model functions or build-in models in lmfit (accept by both list(str) or str).
-[See more about lmfit build-in models, or all of them](https://lmfit.github.io/lmfit-py/builtin_models.html)
+You can use your own model functions or build-in models in `lmfit` (this commend accepts both a `list(str)` or `str`).
+[See more about builtin lmfit build-in models](https://lmfit.github.io/lmfit-py/builtin_models.html)
 
-If you want to do advanced mod to change any parameters' properties, use qfit.set_params() to alter.
+If you want to change any parameters' properties, use `qfit.set_params()` to alter.
 ```python
-#set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=None, expression=None, brute_step=None)
+# set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=None, expression=None, brute_step=None)
 qfit.set_params('amplitude', 5, maximum = 10)
 ```
 
-Then, use do_fit() to fit through lmfit.
+Then, use do_fit() to fit through lmfit:
 ```python 
 qfit.do_fit()
 ```
 
-If need plot, use pretty_print
+If need plot, use `pretty_print()`:
 
 ```python
 qfit.pretty_plot()
 ```
     
-If print pdf, use **pdf_print**.
+To print the resulting plot to a pdf, use `pdf_print`:
 ```python
 qfit.pdf_print('qfit.pdf')
 ```
 
-To get the fit parameters' results, we can use qfit.fit_params, qfit.err_params. Also qfit.fit_values to get the final fitting data.
+To get the fit parameters' results, we can use `qfit.fit_params`, `qfit.err_params`. The method `qfit.fit_values` returns the y-data from the fit.
 
 ```python
 f_p = qfit.fit_params() # return dictionary with all the fitting parameters 
@@ -44,7 +50,7 @@ f_e = qfit.err_params('amplitude') # return float of amplitude's fitting stderr
 y_fit = qfit.fit_values()
 ```
 
-Here is the built-in function example for qfit
+Here is the built-in function example for `qfit`
 ## Example ##
 
 ```python
