@@ -71,7 +71,7 @@ qfit.do_fit()
 plot_settings = {
     'x_label': 'Time (us)',
     'y_label': 'Voltage (mV)',
-    'plot_title': 'datasource',
+    'plot_title': 'Maxwell's demon',
     'y_lim': [0, 8],
     'fit_color': 'C4',
     'fig_size': (8, 6),
@@ -82,7 +82,7 @@ qfit.pdf_print('./fit_pdf/qfit.pdf')
 plt.show()
 ```
 
-<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" />
+<div style="text-align:center"><img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" /></div>
 
 Or we can use our own modification function
 
@@ -106,5 +106,6 @@ a.do_fit()
 file_path = os.path.dirname(os.path.realpath(__file__))
 a.pdf_print(file_path, 'qfit_test', plot_settings=plot_set)
 ```
+Look into the test file, the template pdf file is there.
 <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
 
