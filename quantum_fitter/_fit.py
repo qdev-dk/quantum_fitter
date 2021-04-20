@@ -1,19 +1,21 @@
-from lmfit import Model, Minimizer, Parameters, report_fit
-from lmfit.models import *
+from lmfit import Model, Minimizer, Parameters, report_fit, models
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
 
 class QFit:
-    def __init__(self, data_x=None, data_y=None, model=None, params_init=None):
+    def __init__(self, data_x=None, data_y=None, model=None, params_init=None, method='leastsq'):
         self._datax = data_x.flatten()
         self._datay, self._fity = data_y.flatten(), np.empty((0, len(data_y)))
+        self.result = 0
+        self.method = method
 
         # define the history of y, use for pdf or plots
 
         if isinstance(model, str):
-
+            result = getattr(models, model)()
         else:
             self._qmodel = Model(model)
 
@@ -29,11 +31,11 @@ class QFit:
 
 
     def do_fit(self):
-        result = self._qmodel.fit(self._datay, self._params, x=self._datax)
-        print(result.fit_report())
-        self._fity = np.vstack((self._fity, result.best_fit.T))
+        self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
+        print(self.result.fit_report())
+        self._fity = np.vstack((self._fity, self.result.best_fit.T))
 
-    def pretty_print(self):
+    def plot_show(self):
         try:
             import matplotlib.pyplot as plt
             for row in range(len(self._fity)):
@@ -42,21 +44,27 @@ class QFit:
         except ImportError:
             pass
 
+    def params_stderr(self):
+        stderr = {}
+        for params in self.result.params.keys():
+            stderr[params] = self.result.params.get(params).stderr
+        return stderr
 
-    def showFit(self, plot_settings=None):
+
+    def pretty_print(self, plot_settings=None):
         '''Basic function for plotting the result of a fit'''
-        fit_params, error_params, fit_results = self.fit()
+        fit_params, error_params = self.result.best_values, self.params_stderr()
         fig, ax = plt.subplots(1, 1, figsize=(8, 6))
         # Add the original data
         data_color = 'C0' if plot_settings is None else plot_settings.get('data_color', 'C0')
-        ax.plot(self.xData, self.yData, '.', label='Data', color=data_color, markersize=10, zorder=10)
+        ax.plot(self._datax, self._fity.flatten(), '.', label='Data', color=data_color, markersize=10, zorder=10)
         fit_color = 'gray' if plot_settings is None else plot_settings.get('fit_color', 'k')
         # Add fitting curve:
-        ax.plot(self.xData, self.yData - fit_results.residual, '-', linewidth=1, label='Fit', color=fit_color)
-        ax.plot(self.xData, self.yData - fit_results.residual, 'o', markersize=3, color=fit_color)
+        ax.plot(self._datax, self._fity.flatten(), '-', linewidth=1, label='Fit', color=fit_color)
+        ax.plot(self._datax, self._fity.flatten(), 'o', markersize=3, color=fit_color)
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
-            ax.plot(self.xData[0], self.yData[0], 'o', markersize=0, \
+            ax.plot(self._datax[0], self._fity.flatten()[0], 'o', markersize=0, \
                     label='{​}​: {​:4.4}​±{​:4.4}​'.format(key, fit_params[key], error_params[key]))
         # Rescale plot if user wants it:
         if plot_settings is not None:
@@ -75,11 +83,9 @@ class QFit:
             return fig, ax
 
 
-def pdf_print(self):
+    def pdf_print(self):
         import datetime
-        import numpy as np
         from matplotlib.backends.backend_pdf import PdfPages
-        import matplotlib.pyplot as plt
 
         # Create the PdfPages object to which we will save the pages:
         # The with statement makes sure that the PdfPages object is closed properly at

@@ -17,5 +17,5 @@ a = qf.QFit(x, y, gaussian, params_ini)
 a.set_params('amp', 5)
 a.do_fit()
 
-# a.pretty_print()
+a.pretty_print()
 plt.show()
