@@ -5,18 +5,23 @@ You can use your own model functions or build-in models in lmfit (accept by both
 [See more about lmfit build-in models, or all of them](https://lmfit.github.io/lmfit-py/builtin_models.html)
 
 If you want to do advanced mod to change any parameters' properties, use ins.set_params() to alter.
+```python
 set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=None, expression=None, brute_step=None):
+```
 
 Then, use ins.do_fit() to fit through lmfit.
 
 If plot, use pretty_print(plot_settings), with following dict.
 
+```python
 plot_settings = {
     'x_label': 'Time (us)',
     'y_label': 'Voltage (mV)',
     'plot_title': 'datasource',
     'y_lim': [0, 80],
     'fit_color': 'C4'
+    }
+```
     
 If print pdf, use **pdf_print**. if don't want figure output, use pdf_print(plot_settings)
 
