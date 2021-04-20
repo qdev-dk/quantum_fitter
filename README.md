@@ -14,7 +14,7 @@ params_ini = {'intercept': 0,
 You can use your own model functions or build-in models in lmfit (accept by both list(str) or str).
 [See more about lmfit build-in models, or all of them](https://lmfit.github.io/lmfit-py/builtin_models.html)
 
-If you want to do advanced mod to change any parameters' properties, use ins.set_params() to alter.
+If you want to do advanced mod to change any parameters' properties, use qfit.set_params() to alter.
 ```python
 #set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=None, expression=None, brute_step=None)
 qfit.set_params('amplitude', 5, maximum = 10)
