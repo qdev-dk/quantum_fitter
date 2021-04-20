@@ -81,8 +81,9 @@ qfit.pretty_print()
 qfit.pdf_print('./fit_pdf/qfit.pdf')
 plt.show()
 ```
-
-<center><img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" /></center>
+<p align="center">
+<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" />
+</p>
 
 Or we can use our own modification function
 
