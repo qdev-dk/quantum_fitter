@@ -1,7 +1,7 @@
 from lmfit import Model, Minimizer, Parameters, report_fit, models
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
 
 class QFit:
     def __init__(self, data_x=None, data_y=None, model=None, params_init=None, method='leastsq'):
@@ -33,6 +33,7 @@ class QFit:
         elif isinstance(params_init, dict):
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
+
 
     def set_params(self, name: str, value: float = None, vary: bool = True, minimum=None, maximum=None, expression=None
                    , brute_step=None):
@@ -101,15 +102,13 @@ class QFit:
         except:
             pass
 
-    def pdf_print(self, filename=None, plot_settings=None):
+    def pdf_print(self, file_dir, filename, plot_settings=None):
         import datetime
         from matplotlib.backends.backend_pdf import PdfPages
 
-        if not filename:
-            filename = 'qf_fit.pdf'
+        os.chdir(file_dir)
         # Create the PdfPages object to which we will save the pages:
         with PdfPages(filename) as pdf:
-
             # if don't wanna output figure, only want pdf pages, do it here.
             if self._fig == 0:
                 self.pretty_print(plot_settings=plot_settings)
@@ -120,8 +119,7 @@ class QFit:
             d = pdf.infodict()
             d['Title'] = 'Qfit PDF Example'
             d['Author'] = 'Kian'
-            d['Subject'] = 'How to create a multipage pdf file and set its metadata'
-            d['Keywords'] = 'PdfPages multipage keywords author title subject'
+            d['Subject'] = 'Qfit'
             d['CreationDate'] = datetime.datetime.today()
             d['ModDate'] = datetime.datetime.today()
         pass

@@ -2,6 +2,7 @@ import quantum_fitter as qf
 from numpy import sqrt, pi, exp
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 
 def gaussian(x, amp, cen, wid):
@@ -20,7 +21,7 @@ params_ini = {'intercept': 0,
 plot_settings = {
     'x_label': 'Time (us)',
     'y_label': 'Voltage (mV)',
-    'plot_title': 'datasource',
+    'plot_title': 'Maxwell\'s demon',
     'y_lim': [0, 8],
     'fit_color': 'C4',
     'fig_size': (8, 6),
@@ -31,6 +32,7 @@ a = qf.QFit(x, y, ['GaussianModel', 'LinearModel'], params_ini)
 
 a.do_fit()
 a.pretty_print(plot_settings)
-a.pdf_print()
+file_path = os.path.dirname(os.path.realpath(__file__))
+a.pdf_print(file_path, 'qfit_test')
 params = a.fit_params()
 plt.show()
