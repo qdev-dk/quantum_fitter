@@ -34,10 +34,31 @@ class QFit:
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
 
+    def __str__(self):
+        return 'Lmfit hi'
 
     def set_params(self, name: str, value: float = None, vary: bool = True, minimum=None, maximum=None, expression=None
                    , brute_step=None):
         self._params.add(name, value, vary, minimum, maximum, expression, brute_step)
+
+    def init_params(self, init_dict: dict):
+        for para_name in init_dict.keys():
+            self._params.add(para_name, init_dict[para_name])
+
+    def add_models(self, model, merge: str='+'):
+        _new_model = Model(model)
+        if merge == '+':
+            self._qmodel += _new_model
+        elif merge == '*':
+            self._qmodel *= _new_model
+        elif merge == '-':
+            self._qmodel -= _new_model
+        elif merge == '/':
+            self._qmodel /= _new_model
+        else:
+            self._qmodel += _new_model
+            print('Merge style wrongly specified. Using \'+\' operator instead\n')
+        self._params += _new_model.make_params()
 
     def fit_params(self, name: str = None):
         if name is None:
@@ -129,6 +150,9 @@ class QFit:
         for params in self.result.params.keys():
             stderr[params] = self.result.params.get(params).stderr
         return stderr
+
+    def _init_params(self):
+        return self._params.valuesdict()
 
 
 
