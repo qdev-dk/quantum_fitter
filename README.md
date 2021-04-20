@@ -82,7 +82,7 @@ qfit.pdf_print('./fit_pdf/qfit.pdf')
 plt.show()
 ```
 
-<div style="text-align:center"><img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" /></div>
+<center><img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" /></center>
 
 Or we can use our own modification function
 
