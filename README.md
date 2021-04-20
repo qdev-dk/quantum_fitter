@@ -59,4 +59,4 @@ a.pdf_print()
 plt.show()
 ```
 <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" />
-![alt text](https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF"Cheerful Spinning Morten")
+<img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
