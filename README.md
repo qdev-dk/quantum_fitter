@@ -17,7 +17,7 @@ You can use your own model functions or build-in models in lmfit (accept by both
 If you want to do advanced mod to change any parameters' properties, use ins.set_params() to alter.
 ```python
 #set_params(name: str, value: float=None, vary:bool=True, minimum=None, maximum=None, expression=None, brute_step=None)
-qfit.set_params('amp', 5)
+qfit.set_params('amplitude', 5, maximum = 10)
 ```
 
 Then, use do_fit() to fit through lmfit.
@@ -82,6 +82,8 @@ qfit.pdf_print('./fit_pdf/qfit.pdf')
 plt.show()
 ```
 
+<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="80" height="60" />
+
 Or we can use our own modification function
 
 ```python
@@ -101,7 +103,8 @@ params_ini = {'amplitude': 5,
 qfit = qf.QFit(x, y, gaussian, params_ini)
 
 a.do_fit()
-a.pdf_print('./pdf_plot',plot_settings=plot_set)
+file_path = os.path.dirname(os.path.realpath(__file__))
+a.pdf_print(file_path, 'qfit_test', plot_settings=plot_set)
 ```
 <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
 
