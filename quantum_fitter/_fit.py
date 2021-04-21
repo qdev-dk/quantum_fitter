@@ -41,11 +41,17 @@ class QFit:
                    , brute_step=None):
         self._params.add(name, value, vary, minimum, maximum, expression, brute_step)
 
-    def init_params(self, init_dict: dict):
+    @property
+    def params(self):
+        print(self._params.valuesdict())
+        return self._params.valuesdict()
+
+    @params.setter
+    def params(self, init_dict: dict):
         for para_name in init_dict.keys():
             self._params.add(para_name, init_dict[para_name])
 
-    def add_models(self, model, merge: str='+'):
+    def add_models(self, model, merge: str = '+'):
         _new_model = Model(model)
         if merge == '+':
             self._qmodel += _new_model
@@ -154,6 +160,11 @@ class QFit:
     def _init_params(self):
         return self._params.valuesdict()
 
+
+def params(name: str):
+    _params = getattr(models, name)().param_names
+    print(name + '\'s parameters: ' + str(_params))
+    return _params
 
 
 
