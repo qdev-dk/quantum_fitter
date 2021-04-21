@@ -5,7 +5,7 @@
     <img src="https://img.shields.io/static/v1?style=for-the-badge&label=maintainer&message=Kian-Gao&color=inactive"/>
 </p>
 
-The purpose of making this package is to provide a uniform, easy-to-use fitting protocol that everyone can share. It's highly flexible, yet pretty easy to use. . To use the `Qfit` package, you initialize an initialize an instance with your `x`-data, `y`-data, and the models you want to fit to as well as the initial guesses for parameters:
+The purpose of this package is to provide a uniform, easy-to-use fitting protocol that everyone can share and extend, in the cQED-at-QDev group. It's highly flexible, and pretty easy to use. To use the `Qfit` package, you initialize an instance with your `x`-data, `y`-data, and the models you want to fit to as well as the initial guesses for parameters:
 ```python
 qfit = quantum_fitter.Qfit(x, y, ['GaussianModel', 'LinearModel'], params_init); 
 ```
@@ -17,8 +17,8 @@ params_init = {'intercept': 0,
               'center': 5,
               'sigma': 1}
 ```
-You can use your own model functions or build-in models in `lmfit` (this commend accepts both a `list(str)` or `str`).
-[See more about builtin lmfit build-in models](https://lmfit.github.io/lmfit-py/builtin_models.html)
+You can use your own model functions or build-in models in `lmfit`. The class instance accepts both a string (e.g. `GaussianModel`) or a list of strings (if you want to combine multiple models, i.e. a `GaussianModel` with a `LinearModel` on top).
+[See more about builtin lmfit build-in models here](https://lmfit.github.io/lmfit-py/builtin_models.html)
 
 If you want to change any parameters' properties, use `qfit.set_params()` to alter.
 ```python
