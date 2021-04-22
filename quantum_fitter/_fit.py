@@ -1,10 +1,11 @@
 from lmfit import Model, Minimizer, Parameters, report_fit, models
+from scipy.signal import savgol_filter
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
 class QFit:
-    def __init__(self, data_x=None, data_y=None, model=None, params_init=None, method='leastsq'):
+    def __init__(self, data_x, data_y, model=None, params_init=None, method='leastsq'):
         self._datax = data_x.flatten()
 
         # define the history of y, use for pdf or plots
@@ -12,21 +13,26 @@ class QFit:
         self.result = 0
         self.method = method
         self._fig, self._ax = 0, 0
+        self.wash_status = False
+        self._origin_data = self._datay
 
         # using default build-in model in lmfit. If want to do multiple build-in model, just pass in a list of str
         # Example: model=['LinearModel', 'LorentzianModel']
         if isinstance(model, str):
             self._qmodel = getattr(models, model)()
+            self._params = self._qmodel.make_params()
+
         elif isinstance(model, list) or isinstance(model, set):
             self._qmodel = getattr(models, model[0])()
+            self._params = self._qmodel.make_params()
             if len(model) > 1:
                 for m in model[1:]:
-                    self._qmodel += getattr(models, m)()
+                    self.add_models(m)
         else:
             self._qmodel = Model(model)
+            self._params = self._qmodel.make_params()
 
         # set initial value by using either list (in sequence of params) or dict (with name keys and value items)
-        self._params = self._qmodel.make_params()
         if isinstance(params_init, list):
             for n_params in range(len(params_init)):
                 self._params.add(self._qmodel.param_names[n_params], params_init[n_params])
@@ -52,7 +58,23 @@ class QFit:
             self._params.add(para_name, init_dict[para_name])
 
     def add_models(self, model, merge: str = '+'):
-        _new_model = Model(model)
+        if isinstance(model, str):
+            _new_model = getattr(models, model)()
+        else:
+            _new_model = Model(model)
+        # Check if there is any same parameter name
+        name_list = set(self._qmodel.param_names).intersection(_new_model.param_names)
+        if name_list:
+            print('The build-in models have the same parameter name' + str(name_list))
+            if isinstance(model, str):
+                model_name = model
+                prefix = ''.join([c for c in model if c.isupper()])
+            else:
+                prefix = model.__name__
+                model_name = prefix
+            _new_model.prefix = prefix
+            print('Add prefix', prefix, 'to the parameters in', model_name)
+
         if merge == '+':
             self._qmodel += _new_model
         elif merge == '*':
@@ -83,6 +105,11 @@ class QFit:
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
         print(self.result.fit_report())
         self._fity = np.vstack((self._fity, self.result.best_fit.T))
+
+    def wash(self, method='savgol', **kwargs):
+        print('Using method '+method+' to smooth the data')
+        if method == 'savgol':
+            self._datay = savgol_filter(self._datay, kwargs.get('window_length'), kwargs.get('polyorder'))
 
     def plot_show(self):
         try:

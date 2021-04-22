@@ -11,14 +11,14 @@ import quantum_fitter as qf
 # sys.path.append('D:/Labber/Script')
 # import Labber
 
-# datasource = './BFC3-16-Qu3_T1_quick.hdf5'
-# qubit = 3
-# entry = 4
-# dataChannel = 'MQ PulseGen - Voltage, QB'+str(qubit)
-# Lfile = Labber.LogFile(datasource)
-# [xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=entry)
-# xData = xData*1e6 # Convert to µs unit
-# yData = np.imag(yData)
+datasource = './BFC3-16-Qu3_T1_quick.hdf5'
+qubit = 3
+entry = 4
+dataChannel = 'MQ PulseGen - Voltage, QB'+str(qubit)
+Lfile = Labber.LogFile(datasource)
+[xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=entry)
+xData = xData*1e6 # Convert to µs unit
+yData = np.imag(yData)
 
 model = ['ExponentialModel', 'ConstantModel']
 params_ini = {'amplitude': -0.03,
@@ -56,17 +56,17 @@ def gaussian(x, amp, cen, wid):
 def sin_func(x, amp, freq, shift):
     return amp * np.sin(freq * x + shift)
 
-# x = np.linspace(0, 10, 500)
-# y = gaussian(x, 8, 5, 0.6) + np.random.randn(500) + 0.2 * x + 0.1
+x = np.linspace(0, 10, 500)
+y = gaussian(x, 8, 5, 0.6) + np.random.randn(500) + 0.2 * x + 0.1
 params_ini = {'amp': 5,
               'amplitude': -0.01,
               'decay': 10,
               'freq': 10,
               'shift': 1.5}
 
-a = qf.QFit(xData, yData, model)
+a = qf.QFit(x, y, model)
 a.add_models(sin_func, merge='*')
-a.params(params_ini)
+a.params = params_ini
 
 # a.set_params('amp', 5)
 
