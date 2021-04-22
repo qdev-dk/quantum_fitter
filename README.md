@@ -26,6 +26,11 @@ If you want to change any parameters' properties, use `qfit.set_params()` to alt
 qfit.set_params('amplitude', 5, maximum = 10)
 ```
 
+If need to smooth the data beforehand, use `qfit.wash()` to [filter the spikes](https://docs.scipy.org/doc/scipy/reference/signal.html).
+```python
+qfit.wash(method='savgol', window_length=5, polyorder=1)
+```
+
 Then, use do_fit() to fit through lmfit:
 ```python 
 qfit.do_fit()
@@ -34,7 +39,7 @@ qfit.do_fit()
 If need plot, use `pretty_print()`:
 
 ```python
-qfit.pretty_plot()
+qfit.pretty_print()
 ```
     
 To print the resulting plot to a pdf, use `pdf_print`:
@@ -49,6 +54,7 @@ f_p = qfit.fit_params() # return dictionary with all the fitting parameters
 f_e = qfit.err_params('amplitude') # return float of amplitude's fitting stderr
 y_fit = qfit.fit_values()
 ```
+
 
 Here is the built-in function example for `qfit`
 ## Example ##
@@ -109,10 +115,53 @@ params_ini = {'amplitude': 5,
 
 qfit = qf.QFit(x, y, gaussian, params_ini)
 
+# smooth the spikes
+a.wash()
+
 a.do_fit()
 file_path = os.path.dirname(os.path.realpath(__file__))
 a.pdf_print(file_path, 'qfit_test', plot_settings=plot_set)
 ```
 Look into the test file, the template pdf file is there.
 <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
+
+
+# Appendix A: The build-in function list
+**Peak-like models**, for more models, [tap here](https://lmfit.github.io/lmfit-py/builtin_models.html).
+
+[GaussianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#gaussianmodel)
+
+[LorentzianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#lorentzianmodel)
+
+[SplitLorentzianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#splitlorentzianmodel)
+
+[VoigtModel](https://lmfit.github.io/lmfit-py/builtin_models.html#voigtmodel)
+
+[PseudoVoigtModel](https://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel)
+
+[MoffatModel](https://lmfit.github.io/lmfit-py/builtin_models.html#moffatmodel)
+
+[Pearson7Model](https://lmfit.github.io/lmfit-py/builtin_models.html#pearson7model)
+
+[StudentsTModel](https://lmfit.github.io/lmfit-py/builtin_models.html#studentstmodel)
+
+[BreitWignerModel](https://lmfit.github.io/lmfit-py/builtin_models.html#breitwignermodel)
+
+[LognormalModel](https://lmfit.github.io/lmfit-py/builtin_models.html#lognormalmodel)
+
+[DampedOscillatorModel](https://lmfit.github.io/lmfit-py/builtin_models.html#dampedoscillatormodel)
+
+[DampedHarmonicOscillatorModel](https://lmfit.github.io/lmfit-py/builtin_models.html#dampedharmonicoscillatormodel)
+
+[ExponentialGaussianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#exponentialgaussianmodel)
+
+[SkewedGaussianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#skewedgaussianmodel)
+
+[SkewedVoigtModel](https://lmfit.github.io/lmfit-py/builtin_models.html#skewedvoigtmodel)
+
+[ThermalDistributionModel](https://lmfit.github.io/lmfit-py/builtin_models.html#thermaldistributionmodel)
+
+[DoniachModel](https://lmfit.github.io/lmfit-py/builtin_models.html#doniachmodel)
+
+
 
