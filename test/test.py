@@ -20,7 +20,8 @@ Lfile = Labber.LogFile(datasource)
 xData = xData*1e6 # Convert to µs unit
 yData = np.imag(yData)
 
-model = ['ExponentialModel', 'ConstantModel']
+model = ['ExponentialModel', 'LinearModel']
+new_model = ['ExponentialModel', 'GaussianModel']
 params_ini = {'amplitude': -0.03,
               'decay': 1,
               'c': -0.005}
@@ -41,8 +42,9 @@ T1fit.pretty_print(plot_settings)
 
 # %%
 T1fit.fit_params()
-plt.plot(xData, T1fit.fit_values(), 'o-')
-
+plt.plot(x,T1fit.fit_values(), 'o-')
+# %%
+qf.params('ExponentialModel')
 
 # %%
 # The built-in function might encounter same params name collide problem. So we should define our own model instead
