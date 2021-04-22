@@ -9,16 +9,16 @@ import quantum_fitter as qf
 
 # Same for this line:
 # sys.path.append('D:/Labber/Script')
-import Labber
+# import Labber
 
-datasource = './BFC3-16-Qu3_T1_quick.hdf5'
-qubit = 3
-entry = 4
-dataChannel = 'MQ PulseGen - Voltage, QB'+str(qubit)
-Lfile = Labber.LogFile(datasource)
-[xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=entry)
-xData = xData*1e6 # Convert to µs unit
-yData = np.imag(yData)
+# datasource = './BFC3-16-Qu3_T1_quick.hdf5'
+# qubit = 3
+# entry = 4
+# dataChannel = 'MQ PulseGen - Voltage, QB'+str(qubit)
+# Lfile = Labber.LogFile(datasource)
+# [xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=entry)
+# xData = xData*1e6 # Convert to µs unit
+# yData = np.imag(yData)
 
 model = ['ExponentialModel', 'LinearModel']
 new_model = ['ExponentialModel', 'GaussianModel']
@@ -29,10 +29,12 @@ params_ini = {'amplitude': -0.03,
 plot_settings = {
     'x_label': 'Time (us)',
     'y_label': 'Voltage (mV)',
-    'plot_title': datasource,
+    'plot_title': 'datasource',
     'fit_color': 'C4',
     'fig_size': (8, 6),
 }
+
+qf.params('GaussianModel')
 
 T1fit = qf.QFit(xData, yData, model, params_ini)
 T1fit.do_fit()
@@ -64,9 +66,9 @@ params_ini = {'amp': 5,
               'freq': 10,
               'shift': 1.5}
 
-
+a = qf.QFit(xData, yData, model)
 a.add_models(sin_func, merge='*')
-a.init_params(params_ini)
+a.params(params_ini)
 
 # a.set_params('amp', 5)
 
@@ -76,5 +78,3 @@ a.pretty_print(plot_settings)
 # a.pdf_print(file_path, 'qfit_test')
 params = a.fit_params()
 plt.show()
-
-print(Labber.version)

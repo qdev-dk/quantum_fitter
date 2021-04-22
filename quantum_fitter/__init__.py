@@ -31,7 +31,7 @@ a.pretty_print()
 plt.show()
 
 """
-from ._fit import QFit
+from ._fit import *
 try:
     from lmfit import Model
 except ImportError:
