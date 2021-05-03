@@ -107,25 +107,17 @@ class QFit:
         self._fity = np.vstack((self._fity, self.result.best_fit.T))
 
     def wash(self, method='savgol', **kwargs):
-        print('Using method '+method+' to smooth the data')
         if method == 'savgol':
-            self._datay = savgol_filter(self._datay, kwargs.get('window_length'), kwargs.get('polyorder'))
-
-    def plot_show(self):
-        try:
-            import matplotlib.pyplot as plt
-            for row in range(len(self._fity)):
-                plt.plot(self._datax, self._datay, 'k+')
-                plt.plot(self._datax, self._fity[row], 'r')
-        except ImportError:
-            pass
+            _win_l = kwargs.get('window_length') if kwargs.get('window_length') else 3
+            _po = kwargs.get('polyorder') if kwargs.get('polyorder') else 1
+            self._datay = savgol_filter(self._datay, _win_l, _po)
 
     def pretty_print(self, plot_settings=None):
         '''Basic function for plotting the result of a fit'''
         fit_params, error_params, fit_value = self.result.best_values, self._params_stderr(), \
                                               self.result.best_fit.flatten()
         _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
-        fig, ax = plt.subplots(1, 1, figsize=_fig_size)
+        self._fig, ax = plt.subplots(1, 1, figsize=_fig_size)
         # Add the original data
         data_color = 'C0' if plot_settings is None else plot_settings.get('data_color', 'C0')
         ax.plot(self._datax, self._datay, '.', label='Data', color=data_color, markersize=10, zorder=10)
@@ -149,12 +141,11 @@ class QFit:
         title = 'Data source not given' if plot_settings is None else plot_settings.get('plot_title', 'no name given')
         ax.set_title('Datasource: ' + title + '\n Fit type: ' + str(self._qmodel.name))
         # Check if use wants figure and return if needed:
+        if plot_settings is None or plot_settings.get('show_fig', None) is None:
+            plt.show()
 
-        try:
-            if plot_settings.get('return_fig', None) is not None:
-                return fig, ax
-        except:
-            pass
+        if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
+            return self._fig, ax
 
     def pdf_print(self, file_dir, filename, plot_settings=None):
         import datetime
@@ -180,8 +171,8 @@ class QFit:
 
     def _params_stderr(self):
         stderr = {}
-        for params in self.result.params.keys():
-            stderr[params] = self.result.params.get(params).stderr
+        for param in self.result.params.keys():
+            stderr[param] = self.result.params.get(params).stderr
         return stderr
 
     def _init_params(self):

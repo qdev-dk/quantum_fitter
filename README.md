@@ -129,6 +129,8 @@ Look into the test file, the template pdf file is there.
 # Appendix A: The build-in function list
 **Peak-like models**, for more models, [tap here](https://lmfit.github.io/lmfit-py/builtin_models.html).
 
+To obtain the parameters in the models, use ```qf.params('GaussianModel')``` to get.
+
 [GaussianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#gaussianmodel)
 
 [LorentzianModel](https://lmfit.github.io/lmfit-py/builtin_models.html#lorentzianmodel)
