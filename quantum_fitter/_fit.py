@@ -3,24 +3,33 @@ from scipy.signal import savgol_filter
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import quantum_fitter._model as md
+
 
 class QFit:
-    def __init__(self, data_x, data_y, model=None, params_init=None, method='leastsq'):
+    def __init__(self, data_x, data_y=None, model=None, params_init=None, method='leastsq', **kwargs):
         self._datax = data_x.flatten()
-
+        self._datay, self._raw_y, self._fity = data_y, data_y, None
         # define the history of y, use for pdf or plots
-        self._datay, self._fity = data_y.flatten(), np.empty((0, len(data_y)))
+        if self._datay is not None:
+            self._datay, self._fity = data_y.flatten(), np.empty((0, len(data_y)))
+            self._origin_data = self._datay
         self.result = 0
         self.method = method
         self._fig, self._ax = 0, 0
         self.wash_status = False
-        self._origin_data = self._datay
+        self._init_guess_y = None
 
         # using default build-in model in lmfit. If want to do multiple build-in model, just pass in a list of str
         # Example: model=['LinearModel', 'LorentzianModel']
         if isinstance(model, str):
-            self._qmodel = getattr(models, model)()
-            self._params = self._qmodel.make_params()
+            # Detect if we are using resonator model
+            if model in ['ComplexResonatorModel', 'ResonatorModel']:
+                self._qmodel = getattr(md, model)()
+                self._params = self._qmodel.make_params()
+            else:
+                self._qmodel = getattr(models, model)()
+                self._params = self._qmodel.make_params()
 
         elif isinstance(model, list) or isinstance(model, set):
             self._qmodel = getattr(models, model[0])()
@@ -40,6 +49,8 @@ class QFit:
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
 
+        self.x_name = self._qmodel.param_names[0]
+
     def __str__(self):
         return 'Lmfit hi'
 
@@ -49,6 +60,10 @@ class QFit:
 
     @property
     def params(self):
+        '''
+        Set or get the parameters of current models.
+        :return: Parameters' dictionary
+        '''
         print(self._params.valuesdict())
         return self._params.valuesdict()
 
@@ -57,7 +72,27 @@ class QFit:
         for para_name in init_dict.keys():
             self._params.add(para_name, init_dict[para_name])
 
+    @property
+    def data_y(self):
+        if not self._datay:
+            print('No data y now!')
+            return
+        return self._datay
+
+    @data_y.setter
+    def data_y(self, data_y):
+        self._datay = data_y
+
+    def make_params(self, **kwargs):
+        return self._qmodel.make_params(**kwargs)
+
     def add_models(self, model, merge: str = '+'):
+        '''
+        Add model to current models.
+        :param model: The model you want to add in.
+        :param merge: The operation needed to merge, can be +,-,/,*.
+        :return:
+        '''
         if isinstance(model, str):
             _new_model = getattr(models, model)()
         else:
@@ -88,10 +123,21 @@ class QFit:
             print('Merge style wrongly specified. Using \'+\' operator instead\n')
         self._params += _new_model.make_params()
 
+    def eval(self, params=None, **kwargs):
+        if params is None:
+            self._init_guess_y = self._qmodel.eval(self._params, **kwargs)
+            return self._init_guess_y
+        else:
+            self._init_guess_y = self._qmodel.eval(params, **kwargs)
+            return self._init_guess_y
+
     def fit_params(self, name: str = None):
         if name is None:
             return self.result.values
         return self.result.values[name]
+
+    def guess(self):
+        self._params = self._qmodel.guess(self._datay, f=self._datax)
 
     def err_params(self, name: str = None):
         if name is None:
@@ -104,13 +150,18 @@ class QFit:
     def do_fit(self):
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
         print(self.result.fit_report())
-        self._fity = np.vstack((self._fity, self.result.best_fit.T))
+        self._fity = self.result.best_fit
 
     def wash(self, method='savgol', **kwargs):
         if method == 'savgol':
             _win_l = kwargs.get('window_length') if kwargs.get('window_length') else 3
-            _po = kwargs.get('polyorder') if kwargs.get('polyorder') else 1
-            self._datay = savgol_filter(self._datay, _win_l, _po)
+            _po = kwargs.get('polyorder') if kwargs.get('polyorder') else 2
+            if np.iscomplexobj(self._datay):
+                rr = savgol_filter(np.real(self._datay), _win_l, _po)
+                ri = savgol_filter(np.imag(self._datay), _win_l, _po)
+                self._datay = np.vectorize(complex)(rr, ri)
+            else:
+                self._datay = savgol_filter(self._datay, _win_l, _po)
 
     def pretty_print(self, plot_settings=None):
         '''Basic function for plotting the result of a fit'''
@@ -147,6 +198,40 @@ class QFit:
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
 
+    def polar_plot(self, plot_settings={}, power=None):
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
+        ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
+        ax1.scatter(self._datay.real, self._datay.imag, c='grey', s=1)
+        ax1.set_title('Raw S21 Complex Plane', fontdict={'fontsize': 10})
+        ax1.set_xlabel('Re(S21)')
+        ax1.set_ylabel('Im(S21)')
+
+        ax2.plot(self._datax, 20*np.log10(np.abs(self._fity)), 'r', label='best fit', linewidth=1.5)
+        ax2.scatter(self._datax, 20*np.log10(np.abs(self._datay)), c='grey', s=1)
+        ax2.set_title('S21 Mag', fontdict={'fontsize': 10})
+        ax2.set_xlabel('Frequency / MHz')
+        ax2.set_ylabel('S21(dB)')
+
+        ax3.plot(self._datax, np.angle(self._fity), 'r', label='best fit', linewidth=1.5)
+        ax3.scatter(self._datax, np.angle(self._datay), c='grey', s=1)
+        ax3.set_title('S21 Phase', fontdict={'fontsize': 10})
+        ax3.set_xlabel('Frequency / MHz')
+        ax3.set_ylabel('Angle / rad')
+
+        fit_info = '$Q_{int}= $'+str(self.fit_params('Qi')*1e3)[:8]+'    '
+        fit_info += '$Q_{ext}= $'+str(self.fit_params('Qe_mag')*1e3)[:8]
+        if power:
+            fit_info += '    ' + 'Power= '+str(power)+'dBm'
+
+        fig.suptitle(fit_info, fontdict={'fontsize': 10})
+
+
+        if plot_settings.get('plot_guess', None) is not None:
+            ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, 'k--', label='inital fit')
+
+        fig.tight_layout()
+        plt.show()
+
     def pdf_print(self, file_dir, filename, plot_settings=None):
         import datetime
         from matplotlib.backends.backend_pdf import PdfPages
@@ -169,6 +254,9 @@ class QFit:
             d['ModDate'] = datetime.datetime.today()
         pass
 
+    def print_params(self):
+        self._params.pretty_print()
+
     def _params_stderr(self):
         stderr = {}
         for param in self.result.params.keys():
@@ -179,10 +267,33 @@ class QFit:
         return self._params.valuesdict()
 
 
+
 def params(name: str):
+    if name in ['ComplexResonatorModel', 'ResonatorModel']:
+        _params=getattr(md, name)().param_names
+        print(name + '\'s parameters: ' + str(_params))
+        return _params
     _params = getattr(models, name)().param_names
     print(name + '\'s parameters: ' + str(_params))
     return _params
 
+
+def read_dat(file_location: str, power):
+    import pandas as pd
+    df = pd.read_csv(file_location, delimiter='\t', header=0,
+                     skiprows=lambda x: x in [0, 2])
+    df.columns = ['Power'] + list(df.columns[1:])
+    _power = df['Power'].to_numpy()
+    _power_mask = np.argwhere(_power == power)  # Choose the power you fit
+    freq = df['S21 frequency'].to_numpy()[_power_mask]
+    print(freq)
+    mag = df['S21 magnitude'].to_numpy()[_power_mask]
+    phase = df['S21 phase'].to_numpy()[_power_mask]
+    S21 = mag * np.exp(1j * phase)
+
+    # Scale and centerize(?)the frequency
+    freq = freq * 1e-6
+
+    return freq, S21
 
 

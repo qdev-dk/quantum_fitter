@@ -66,7 +66,8 @@ class ResonatorModel(lmfit.model.Model):
         # pass in the defining equation so the user doesn't have to later.
         super().__init__(ResonatorModel.S21funct, *args, **kwargs)
 
-    def guess(self, data, f=None, **kwargs):
+    def guess(self, data, f=None, linecomp=None, **kwargs):
+
         verbose = kwargs.pop('verbose', None)
         A_guess = np.mean(np.abs(data)[[0, -1]])
         S21_norm = data / A_guess
@@ -108,7 +109,7 @@ class ResonatorModel(lmfit.model.Model):
         C = np.zeros([6, 6])
         C[0, 2] = C[2, 0] = 2;
         C[1, 1] = -1
-        E, V = np.linalg.eig(np.dot(np.linalg.inv(S), C))
+        E, V = np.linalg.eig(np.dot(np.linalg.pinv(S), C))
         n = np.argmax(np.abs(E))
         a = V[:, n]
         return a

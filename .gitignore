@@ -1,5 +1,5 @@
 /venv/
-/test/_test.py
+/_test/_test.py
 
 .DS_Store
-/test/
+/_test/
