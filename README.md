@@ -94,7 +94,7 @@ qfit.pdf_print('./fit_pdf/qfit.pdf')
 plt.show()
 ```
 <p align="center">
-<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/test/qtest.png" width="400" height="300" />
+<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/_test/qtest.png" width="400" height="300" />
 </p>
 
 Or we can use our own modification function
@@ -124,6 +124,8 @@ a.pdf_print(file_path, 'qfit_test', plot_settings=plot_set)
 ```
 Look into the test file, the template pdf file is there.
 <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
+
+For more examples, please look into the example directory. 
 
 
 # Appendix A: The build-in function list
