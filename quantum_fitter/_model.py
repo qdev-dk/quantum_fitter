@@ -145,6 +145,5 @@ class ResonatorModel(lmfit.model.Model):
         Q = 1 / (1 / Qc + 1 / Qi)
         S = A * (1 + alpha * (x - f_0) / f_0) * (1 - (Q / Qe) / (1 + 2 * 1j * Q * (x - f_0) / f_0)) * np.exp(
             1j * (phi1 * x + phi2))
-        s = np.hstack([np.real(S), np.imag(S)]).T
         return S
 

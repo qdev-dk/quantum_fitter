@@ -198,30 +198,35 @@ class QFit:
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
 
-    def polar_plot(self, plot_settings={}, power=None):
+    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None):
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
-        ax1.scatter(self._datay.real, self._datay.imag, c='grey', s=1)
+        ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
         ax1.set_title('Raw S21 Complex Plane', fontdict={'fontsize': 10})
         ax1.set_xlabel('Re(S21)')
         ax1.set_ylabel('Im(S21)')
 
         ax2.plot(self._datax, 20*np.log10(np.abs(self._fity)), 'r', label='best fit', linewidth=1.5)
-        ax2.scatter(self._datax, 20*np.log10(np.abs(self._datay)), c='grey', s=1)
+        ax2.scatter(self._datax, 20*np.log10(np.abs(self._raw_y)), c='grey', s=1)
         ax2.set_title('S21 Mag', fontdict={'fontsize': 10})
-        ax2.set_xlabel('Frequency / MHz')
+        ax2.set_xlabel('Frequency / GHz')
         ax2.set_ylabel('S21(dB)')
 
         ax3.plot(self._datax, np.angle(self._fity), 'r', label='best fit', linewidth=1.5)
-        ax3.scatter(self._datax, np.angle(self._datay), c='grey', s=1)
+        ax3.scatter(self._datax, np.angle(self._raw_y), c='grey', s=1)
         ax3.set_title('S21 Phase', fontdict={'fontsize': 10})
-        ax3.set_xlabel('Frequency / MHz')
+        ax3.set_xlabel('Frequency / GHz')
         ax3.set_ylabel('Angle / rad')
 
-        fit_info = '$Q_{int}= $'+str(self.fit_params('Qi')*1e3)[:8]+'    '
-        fit_info += '$Q_{ext}= $'+str(self.fit_params('Qe_mag')*1e3)[:8]
+        fit_info = '$Q_{int}= $'+str("{0:.1f}".format(self.fit_params('Qi')*1e3))+'    '
+        fit_info += '$Q_{ext}= $'+str("{0:.1f}".format(self.fit_params('Qe_mag')*1e3))
+
         if power:
-            fit_info += '    ' + 'Power= '+str(power)+'dBm'
+            fit_info += '    ' + '$P_{VNA}=$ ' + str(power) + 'dBm'
+        if f0:
+            fit_info += '    ' + 'f0= ' + str("{0:.1f}".format(f0)) + 'MHZ'
+        if id:
+            fit_info += '    ' + 'id= ' + str(id)
 
         fig.suptitle(fit_info, fontdict={'fontsize': 10})
 
@@ -230,7 +235,7 @@ class QFit:
             ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, 'k--', label='inital fit')
 
         fig.tight_layout()
-        plt.show()
+        # plt.show()
 
     def pdf_print(self, file_dir, filename, plot_settings=None):
         import datetime
@@ -292,7 +297,7 @@ def read_dat(file_location: str, power):
     S21 = mag * np.exp(1j * phase)
 
     # Scale and centerize(?)the frequency
-    freq = freq * 1e-6
+    freq = freq * 1e-9
 
     return freq, S21
 
