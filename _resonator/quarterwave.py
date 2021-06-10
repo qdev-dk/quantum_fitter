@@ -89,7 +89,6 @@ def run_feedline(f, S21, sgw = None, linecomp = None, guess=()):
 
     # Find guess parameters
     f0 = f[np.argmin(np.abs(S21))]
-
     # Normalize data
     A = np.mean(np.abs(S21)[[0,-1]])
     S21_norm = S21/A

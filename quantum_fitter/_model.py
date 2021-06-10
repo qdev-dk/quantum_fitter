@@ -66,7 +66,7 @@ class ResonatorModel(lmfit.model.Model):
         # pass in the defining equation so the user doesn't have to later.
         super().__init__(ResonatorModel.S21funct, *args, **kwargs)
 
-    def guess(self, data, f=None, linecomp=None, **kwargs):
+    def guess(self, data, f=None, **kwargs):
 
         verbose = kwargs.pop('verbose', None)
         A_guess = np.mean(np.abs(data)[[0, -1]])

@@ -8,12 +8,13 @@ import quantum_fitter._model as md
 
 class QFit:
     def __init__(self, data_x, data_y=None, model=None, params_init=None, method='leastsq', **kwargs):
+        self._raw_y = data_y
+        data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
-        self._datay, self._raw_y, self._fity = data_y, data_y, None
+        self._datay, self._fity = data_y, None
         # define the history of y, use for pdf or plots
         if self._datay is not None:
             self._datay, self._fity = data_y.flatten(), np.empty((0, len(data_y)))
-            self._origin_data = self._datay
         self.result = 0
         self.method = method
         self._fig, self._ax = 0, 0
@@ -138,6 +139,22 @@ class QFit:
 
     def guess(self):
         self._params = self._qmodel.guess(self._datay, f=self._datax)
+        self.eval(x=self._datax)
+
+    def filter_guess(self, level=5):
+        """
+        The basic idea is to do the smoothing first, and then fit with the smooth data to get a decent initial guess.
+        :return:
+        Robust initial guess
+        """
+        self.guess()
+        self.wash(method='savgol', window_length=level, polyorder=3)
+
+        # Do fit with the heavy filter result
+        _result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
+        self._params = _result.params
+        self._datay = self._raw_y
+        self.eval(x=self._datax)
 
     def err_params(self, name: str = None):
         if name is None:
@@ -147,10 +164,24 @@ class QFit:
     def fit_values(self):
         return self.result.best_fit
 
-    def do_fit(self):
+    def do_fit(self, verbose=None):
+
+        # linecomp = 0.05
+        # linFit = [0, 0]
+        # if linecomp:
+        #     phase = np.unwrap(np.angle(self._datay))
+        #     fitwin = int(linecomp * len(self._datax))
+        #     linFit = np.polyfit([np.mean(self._datax[:fitwin]), np.mean(self._datax[-fitwin:])],
+        #                         [np.mean(phase[:fitwin]), np.mean(phase[-fitwin:])], 1)
+        # self._datay = self._datay * np.exp(-1j * linFit[0] * self._datax)
+
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
-        print(self.result.fit_report())
+        if verbose:
+            print(self.result.fit_report())
         self._fity = self.result.best_fit
+
+        # temp = self.params['phi1']+linFit[0]
+        # self.set_params('phi1', temp)
 
     def wash(self, method='savgol', **kwargs):
         if method == 'savgol':
@@ -163,8 +194,31 @@ class QFit:
             else:
                 self._datay = savgol_filter(self._datay, _win_l, _po)
 
+        if method == 'cut':
+            _win = kwargs.get('window') if kwargs.get('window') else [1/3, 2/3]
+            self._datax = self._datax[int(len(self._datax) * _win[0]):int(len(self._datax) * _win[1])]
+            self._datay = self._datay[int(len(self._datay) * _win[0]):int(len(self._datay) * _win[1])]
+            self._fity = self._fity[int(len(self._fity) * _win[0]):int(len(self._fity) * _win[1])]
+            self._raw_y = self._raw_y[int(len(self._raw_y) * _win[0]):int(len(self._raw_y) * _win[1])]
+
+    def cov_mat(self):
+        return self.result.covar
+
+    def plot_cov_mat(self):
+        f = plt.figure(figsize=(8, 6))
+        _cov_mat = self.cov_mat()
+        _tick = self._params_name()
+        plt.matshow(_cov_mat, fignum=f.number)
+        plt.xticks(range(len(_tick)), _tick, fontsize=10,
+                   rotation=45)
+        plt.yticks(range(len(_tick)), _tick, fontsize=10)
+        cb = plt.colorbar()
+        cb.ax.tick_params(labelsize=10)
+        plt.title('Correlation Matrix', fontsize=11)
+
     def pretty_print(self, plot_settings=None):
         '''Basic function for plotting the result of a fit'''
+        plt.figure()
         fit_params, error_params, fit_value = self.result.best_values, self._params_stderr(), \
                                               self.result.best_fit.flatten()
         _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
@@ -208,6 +262,8 @@ class QFit:
 
         ax2.plot(self._datax, 20*np.log10(np.abs(self._fity)), 'r', label='best fit', linewidth=1.5)
         ax2.scatter(self._datax, 20*np.log10(np.abs(self._raw_y)), c='grey', s=1)
+        ax2.scatter(self._datax[np.argmin(20*np.log10(np.abs(self._raw_y)))], np.min(20*np.log10(np.abs(self._raw_y)))
+                    , c='b', s=5)
         ax2.set_title('S21 Mag', fontdict={'fontsize': 10})
         ax2.set_xlabel('Frequency / GHz')
         ax2.set_ylabel('S21(dB)')
@@ -218,8 +274,14 @@ class QFit:
         ax3.set_xlabel('Frequency / GHz')
         ax3.set_ylabel('Angle / rad')
 
+        # if self._qmodel.name == 'ResonatorModel':
         fit_info = '$Q_{int}= $'+str("{0:.1f}".format(self.fit_params('Qi')*1e3))+'    '
         fit_info += '$Q_{ext}= $'+str("{0:.1f}".format(self.fit_params('Qe_mag')*1e3))
+        # if self._qmodel.name == 'ResonatorModel':
+        #     Qe = self.fit_params('Q_e_real') + 1j * self.fit_params('Q_e_imag')
+        #     Qi = 1 / (1 / self.fit_params('Q') - 1 / self.fit_params('Q_e_real')) * 1e3
+        #     fit_info = '$Q_{int}= $' + str("{0:.1f}".format(self.fit_params('Qi') * 1e3)) + '    '
+        #     fit_info += '$Q_{ext}= $' + str("{0:.1f}".format(self.fit_params('Qe_mag') * 1e3))
 
         if power:
             fit_info += '    ' + '$P_{VNA}=$ ' + str(power) + 'dBm'
@@ -271,11 +333,14 @@ class QFit:
     def _init_params(self):
         return self._params.valuesdict()
 
+    def _params_name(self):
+        return list(self._params.valuesdict().keys())
+
 
 
 def params(name: str):
     if name in ['ComplexResonatorModel', 'ResonatorModel']:
-        _params=getattr(md, name)().param_names
+        _params = getattr(md, name)().param_names
         print(name + '\'s parameters: ' + str(_params))
         return _params
     _params = getattr(models, name)().param_names

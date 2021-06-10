@@ -20,25 +20,34 @@ pow = -44
 
 #=======================================
 # Better to move the center of frequency to 0
-for entry in ent:
-    dataChannel = 'VNA - S21'
-    Lfile = Labber.LogFile(datasource)
-    [xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=entry)
-    freq = xData*1e-9 # Convert to µs unit
-    S21 = yData
-    # S21 -= np.mean(S21)
-    # f0 = freq[int(len(freq)/2)]
-    # freq = freq - f0
+dataChannel = 'VNA - S21'
+Lfile = Labber.LogFile(datasource)
+[xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=143)
+freq = xData*1e-9  # Convert to µs unit
+S21 = yData
 
-    t5 = qfit.QFit(freq, S21, model='ResonatorModel',)
-    t5.wash(method='savgol', window_length=5, polyorder=2)
-    # Do a guess (Automatically store the guess parameters), and store the initial guess value for check
-    t5.guess()
-    t5.eval(x=freq)
-    t5.do_fit()
-    t5.polar_plot(power=pow, id=entry, plot_settings={'plot_guess': 0})
+# S21 -= np.mean(S21)
+# f0 = freq[int(len(freq)/2)]
+# freq = freq - f0
 
-    fit_s21 = t5.fit_values()
+# Do initialize the model
+t5 = qfit.QFit(freq, S21, model='ResonatorModel')
+# Cut the data to avoid over-fitting from tails
+# t5.wash(method='cut', window=[19/40, 21/40])
+
+# Filter the data (by smoothing)
+
+# Do a robust guess (Automatically store the guess parameters), and store the initial guess value for check
+t5.filter_guess(level=5)
+
+# Start fit
+t5.do_fit()
+
+# Plot the data
+t5.polar_plot(power=pow, id=142, plot_settings={'plot_guess': 0})
+
+t5.plot_cov_mat()
 plt.show()
+fit_s21 = t5.fit_values()
 
 
