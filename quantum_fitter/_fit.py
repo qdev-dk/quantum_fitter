@@ -208,6 +208,7 @@ class QFit:
         f = plt.figure(figsize=(8, 6))
         _cov_mat = self.cov_mat()
         _tick = self._params_name()
+        print(_cov_mat)
         plt.matshow(_cov_mat, fignum=f.number)
         plt.xticks(range(len(_tick)), _tick, fontsize=10,
                    rotation=45)
@@ -252,7 +253,7 @@ class QFit:
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
 
-    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None):
+    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None, suptitle=None):
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
@@ -290,7 +291,7 @@ class QFit:
         if id:
             fit_info += '    ' + 'id= ' + str(id)
 
-        fig.suptitle(fit_info, fontdict={'fontsize': 10})
+        fig.suptitle(suptitle+'\n'+fit_info, fontdict={'fontsize': 10})
 
 
         if plot_settings.get('plot_guess', None) is not None:

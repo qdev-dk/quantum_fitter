@@ -38,7 +38,7 @@ t5 = qfit.QFit(freq, S21, model='ResonatorModel')
 # Filter the data (by smoothing)
 
 # Do a robust guess (Automatically store the guess parameters), and store the initial guess value for check
-t5.filter_guess(level=5)
+t5.guess()
 
 # Start fit
 t5.do_fit()
