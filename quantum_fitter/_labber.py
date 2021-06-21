@@ -86,16 +86,21 @@ class LabberData:
         if not filename:
             if not filepath:
                 filename = 'Fit_data_'+get_file_name_from_path(self.file_path)
+                filename = filename.replace('.hdf5', '')
+
                 filepath = 'D:/LabberDataTest'
 
-        self._Qi = np.repeat([x['Qi'] for x in self._fitParamHistory], 2)
-        self._Qe = np.repeat([x['Qe_mag'] for x in self._fitParamHistory], 2)
+        self._Qi = np.repeat([x['Qi'] for x in self._fitParamHistory], 2) * 1e3
+        # self._Qi = self._Qi.reshape((2 * len(self._fitEntry), -1))
+        self._Qe = np.repeat([x['Qe_mag'] for x in self._fitParamHistory], 2) * 1e3
 
         _FitLogFile = Labber.createLogFile_ForData(filename,
         [dict(name='S21', unit='dB', vector=True, complex=True),
         dict(name='Frequency', unit='GHz')],
-        [dict(name='Center Frequency', unit='GHz', values=self._selectCenterFrequency, vector=True),
-         dict(name='Output Power', unit='dB', values=self._selectPower, vector=True),
+         [dict(name='Center Frequency', unit='GHz', values=self._selectCenterFrequency),
+         dict(name='Output Power', unit='dB', values=self._selectPower),
+          dict(name='Qi', unit='', values=self._Qi),
+          dict(name='Qe', unit='', values=self._Qe),
         ])
 
         for _entry in range(len(self._fitEntry)):
@@ -119,6 +124,19 @@ class LabberData:
                      }
             _FitLogFile.addEntry(_data)
 
+        self._data_structure_change(_FitLogFile.getFilePath(0), 3, self._Qi)
+        self._data_structure_change(_FitLogFile.getFilePath(0), 4, self._Qe)
+
+    def _data_structure_change(self, path, row, data):
+        """
+        The aim here is to modify the h5 file to better display the fitting parameters.
+        :param path: The h5 file path
+        :param row: The column index in the ['Data']['Data']
+        :return: None
+        """
+        h5 = h5py.File(path, 'r+')
+        print(h5['Data']['Data'])
+        h5['Data']['Data'][:, row, :] = data
 
 def get_file_name_from_path(path):
     import os
