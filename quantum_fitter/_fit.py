@@ -165,23 +165,10 @@ class QFit:
         return self.result.best_fit
 
     def do_fit(self, verbose=None):
-
-        # linecomp = 0.05
-        # linFit = [0, 0]
-        # if linecomp:
-        #     phase = np.unwrap(np.angle(self._datay))
-        #     fitwin = int(linecomp * len(self._datax))
-        #     linFit = np.polyfit([np.mean(self._datax[:fitwin]), np.mean(self._datax[-fitwin:])],
-        #                         [np.mean(phase[:fitwin]), np.mean(phase[-fitwin:])], 1)
-        # self._datay = self._datay * np.exp(-1j * linFit[0] * self._datax)
-
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
         if verbose:
             print(self.result.fit_report())
         self._fity = self.result.best_fit
-
-        # temp = self.params['phi1']+linFit[0]
-        # self.set_params('phi1', temp)
 
     def wash(self, method='savgol', **kwargs):
         if method == 'savgol':
@@ -253,7 +240,7 @@ class QFit:
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
 
-    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None, suptitle=None):
+    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None, suptitle=''):
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)

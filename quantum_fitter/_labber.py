@@ -1,6 +1,4 @@
 import sys
-import Labber
-from Labber import ScriptTools
 import quantum_fitter as qf
 import numpy as np
 import re
@@ -9,68 +7,80 @@ import h5py
 
 
 class LabberData:
-    def __init__(self, filePath=None, channelName=None, powerName:str=None, frequencyName=None, mode='VNA'):
-        self.file_path = filePath
-        self._LogFile = Labber.LogFile(filePath)
-        self.h5data = h5py.File(filePath, 'r')
-        self.h5data.close()
-        self._EntryName = list(self._LogFile.getEntry().keys())
+    def __init__(self, filePath=None, channelName=None, powerName:str=None, frequencyName=None, mode='resonator'):
+        self._filePath = filePath
 
-        self._channelName = channelName if channelName else self._LogFile.getLogChannels()[0].get('name')
-        self._powerName = list(powerName) if powerName else \
-            list(filter(lambda v: re.match('.*[Pp]ower.*$', v), self._LogFile.getEntry().keys()))
-        self._frequencyName = list(frequencyName) if powerName else \
-            list(filter(lambda v: re.match('.*[Ff]req.*$', v), self._LogFile.getEntry().keys()))
+        self.h5data = h5py.File(self._filePath, 'r')
 
-        self._powerValueList = self._LogFile.getData(self._powerName[0]).flatten()
-        print(self._LogFile.getData(self._powerName[0]).shape)
-        self._freqValueList = self._LogFile.getData(self._frequencyName[0]).flatten() * 1e-6
-        self._centerFrequencyList = self._LogFile.getData('VNA - Center frequency') * 1e-9
+        self._channelName, self._channelMatrix, self._dataXMatrix, self._dataYMatrix = list(), None, None, None
+        self._numData = None
 
-        self._runPath = os.path.dirname(os.path.abspath(__file__))
-        self._fitEntry = None
-        self._fitParamHistory = []
-        self._fitValueHistory = []
+        # fit data is an NxM matrix (N is the number id)
+        self._rawData, self._fitData, self._fitMask, self._fitID = None, None, None, None
 
-        self.frequency, self.S21 = None, None
-        self.Qi, self.Qe = None, None
+        self._fitParamHistory, self._fitValueHistory = None, None
+        self.mode = None
 
-        self._selectPower = None
-        self._selectCenterFrequency = None
+    def pull_data(self, mode='resonator', **kwargs):
+        """
+        Pull the data from labber file by certain frequency and power.
+        :param mode: the pulling mode
+        :param power:
+        :param frequency:
+        :return:
+        """
+        if mode == 'resonator':
+            self.mode = mode
+            # print(self.h5data['Data']['Data'][1,2,:])
 
-    def pull_data(self, power=None, frequency=None):
+
+            self._channelMatrix = self.h5data['Data']['Data'][:]
+            self._dataXMatrix = self.h5data['Traces']['VNA - S21_t0dt'][:]
+            self._dataYMatrix = self.h5data['Traces']['VNA - S21'][:]
+            self._dataYMatrix = np.vectorize(complex)(self._dataYMatrix[:, 0, :], self._dataYMatrix[:, 1, :]).T
+            self._fitMask = np.zeros((self._dataYMatrix.shape[1]), dtype=bool)
+
+            if kwargs:
+                print('Here it goes')
+                self.mask_data(**kwargs)
+
+    def mask_data(self, **kwargs):
+        for i in range(len(self.h5data['Data']['Channel names'][:])):
+            self._channelName.append(self.h5data['Data']['Channel names'][i][0].decode("utf-8"))
+        self._numData = self.h5data['Traces']['VNA - S21_N'][0]
+
+        channelMatrixNum = len(self._channelMatrix.shape) - 1
+        channelNameNum = len(self._channelName)
+
+        for key in kwargs:
+            channelNo = LabberData.find_str_args(self._channelName, key)
+            for p in kwargs[key]:
+                dataID = np.argwhere(self._channelMatrix == p)
+                dataID.
+                dataID = (dataID[:, 2] + 1) * dataID[:, 0]
+                self._fitMask[dataID] = True
+
+            pass
+
         if power:
-            self._fitEntry = np.argwhere(self._powerValueList == power).flatten()
-            # leave an option for more selections in power (not yet complete)
-            if self._selectPower is None:
-                self._selectPower = np.repeat(power, 2 * len(self._fitEntry))
-                # self._selectPower = np.array(power)
-                self._selectCenterFrequency = self._centerFrequencyList[:, 0:2].flatten()
-            else:
-                self._selectPower = np.vstack(self._selectPower, np.repeat(power, len(self._fitEntry)))
+            power = np.array(power, dtype=float).reshape([-1])
+        if frequency:
+            frequency = np.array(frequency, dtype=float).reshape([-1])
 
-        elif frequency:
-            self._fitEntry = np.argwhere(self._freqValueList == frequency).flatten()
+        for p in np.concatenate((power, frequency)):
+            dataID = np.argwhere(self._channelMatrix == p)
+            dataID = (dataID[:, 2] + 1) * dataID[:, 0]
+            self._fitMask[dataID] = True
 
-        else:
-            print('You need to specify either power or frequency')
-            return
+        self._fitID = np.argwhere(self._fitMask == True).flatten()
 
-        freq = []
-        S21 = []
-
-        for e in self._fitEntry:
-            [_xData, _yData] = self._LogFile.getTraceXY(y_channel=self._channelName, entry=e)
-            freq.append(_xData)
-            S21.append(_yData)
-
-        self.frequency = np.array(freq) * 1E-6
-        self.S21 = np.array(S21)
-        return self.frequency, self.S21
+        # Extract the needed data
 
     def fit_data(self, model='ResonatorModel'):
-        for thing in range(len(self.frequency)):
-            t_n = qf.QFit(self.frequency[thing], self.S21[thing], model)
+        self._dataXMatrix *= 1e-6  # Change to MHz
+
+        for id in self._fitID:
+            t_n = qf.QFit(self.altspace(self._dataXMatrix[id]), self._dataYMatrix[id], model)
             t_n.filter_guess(level=5)
             t_n.do_fit()
             self._fitParamHistory.append(t_n.fit_params())
@@ -78,55 +88,63 @@ class LabberData:
         self._fitValueHistory = np.array(self._fitValueHistory)
         return t_n
 
-    def polar_plot(self):
-        _tn = self.fit_data()
-        _tn.polar_plot(power=self._selectPower[0], suptitle=get_file_name_from_path(self.file_path))
+    def push_data(self, filepath=None, filename=None, labber_path=None):
+        if labber_path:
+            sys.path.append(labber_path)
+        try:
+            import Labber
+        except:
+            print('No labber found here!')
 
-    def push_data(self, filepath=None, filename=None):
-        if not filename:
-            if not filepath:
-                filename = 'Fit_data_'+get_file_name_from_path(self.file_path)
-                filename = filename.replace('.hdf5', '')
+        if self.mode == 'resonator':
 
-                filepath = 'D:/LabberDataTest'
+            _LogFile = Labber.LogFile(self._filePath)
 
-        self._Qi = np.repeat([x['Qi'] for x in self._fitParamHistory], 2) * 1e3
-        # self._Qi = self._Qi.reshape((2 * len(self._fitEntry), -1))
-        self._Qe = np.repeat([x['Qe_mag'] for x in self._fitParamHistory], 2) * 1e3
+            if not filename:
+                if not filepath:
+                    filename = 'Fit_data_'+get_file_name_from_path(self._filePath)
+                    filename = filename.replace('.hdf5', '')
 
-        _FitLogFile = Labber.createLogFile_ForData(filename,
-        [dict(name='S21', unit='dB', vector=True, complex=True),
-        dict(name='Frequency', unit='GHz')],
-         [dict(name='Center Frequency', unit='GHz', values=self._selectCenterFrequency),
-         dict(name='Output Power', unit='dB', values=self._selectPower),
-          dict(name='Qi', unit='', values=self._Qi),
-          dict(name='Qe', unit='', values=self._Qe),
-        ])
+                    filepath = 'D:/LabberDataTest'
 
-        for _entry in range(len(self._fitEntry)):
-            _fitDictForAdd = self._LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]
-            # _fitDictForAdd[self._channelName]['y'] = self._fitValueHistory[_entry]
+            _Qi = np.repeat([x['Qi'] for x in self._fitParamHistory], 2) * 1e3
+            # self._Qi = self._Qi.reshape((2 * len(self._fitEntry), -1))
+            _Qe = np.repeat([x['Qe_mag'] for x in self._fitParamHistory], 2) * 1e3
 
-            _fitDictForAdd = Labber.getTraceDict(self._fitValueHistory[_entry],
-                            self._LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]['t0'],
-                         self._LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]['t0'])
+            _FitLogFile = Labber.createLogFile_ForData(filename,
+            [dict(name='S21', unit='dB', vector=True, complex=True),
+            dict(name='Frequency', unit='GHz')],
+             [dict(name='Center Frequency', unit='GHz', values=self._selectCenterFrequency),
+             dict(name='Output Power', unit='dB', values=self._selectPower),
+              dict(name='Qi', unit='', values=_Qi),
+              dict(name='Qe', unit='', values=_Qe),
+            ])
 
-            # Add raw data
-            _data = {'S21': self.S21[_entry],
-                     'Frequency': self.frequency[_entry] * 1e-3,
-                     }
+            for _entry in range(len(self._fitEntry)):
+                _fitDictForAdd = _LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]
+                # _fitDictForAdd[self._channelName]['y'] = self._fitValueHistory[_entry]
 
-            _FitLogFile.addEntry(_data)
+                _fitDictForAdd = Labber.getTraceDict(self._fitValueHistory[_entry],
+                                _LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]['t0'],
+                             _LogFile.getEntry(entry=self._fitEntry[_entry])[self._channelName]['t0'])
 
-            # Add fit data
-            _data = {'S21': self._fitValueHistory[_entry],
-                     'Frequency': self.frequency[_entry] * 1e-3,
-                     }
-            _FitLogFile.addEntry(_data)
+                # Add raw data
+                _data = {'S21': self.S21[_entry],
+                         'Frequency': self.frequency[_entry] * 1e-3,
+                         }
 
-        self._data_structure_change(_FitLogFile.getFilePath(0), 3, self._Qi)
-        self._data_structure_change(_FitLogFile.getFilePath(0), 4, self._Qe)
+                _FitLogFile.addEntry(_data)
 
+                # Add fit data
+                _data = {'S21': self._fitValueHistory[_entry],
+                         'Frequency': self.frequency[_entry] * 1e-3,
+                         }
+                _FitLogFile.addEntry(_data)
+
+            LabberData._data_structure_change(_FitLogFile.getFilePath(0), 3, self._Qi)
+            LabberData._data_structure_change(_FitLogFile.getFilePath(0), 4, self._Qe)
+
+    @staticmethod
     def _data_structure_change(self, path, row, data):
         """
         The aim here is to modify the h5 file to better display the fitting parameters.
@@ -138,7 +156,24 @@ class LabberData:
         print(h5['Data']['Data'])
         h5['Data']['Data'][:, row, :] = data
 
+    @staticmethod
+    def altspace(t0dt, count, **kwargs):
+        start = t0dt[0]
+        step = t0dt[1]
+        stop = start + (step * count)
+        return np.linspace(start, stop, count, endpoint=False)
+
+    @staticmethod
+    def find_str_args(choices: list, target):
+        for i in range(len(choices)):
+            if target in choices[i].lower():
+                return i
+            else:
+                print('Didn\'t find the corresponding channel')
+
+
 def get_file_name_from_path(path):
     import os
     head, tail = os.path.split(path)
     return tail
+
