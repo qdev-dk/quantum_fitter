@@ -9,7 +9,7 @@ import quantum_fitter._model as md
 class QFit:
     def __init__(self, data_x, data_y=None, model=None, params_init=None, method='leastsq', **kwargs):
         self._raw_y = data_y
-        data_y /= np.mean(np.abs(data_y)[[0, -1]])
+        # data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
         self._datay, self._fity = data_y, None
         # define the history of y, use for pdf or plots
@@ -51,6 +51,8 @@ class QFit:
                 self._params.add(para_name, params_init[para_name])
 
         self.x_name = self._qmodel.param_names[0]
+        self.weight = None
+        self.wash_params = None
 
     def __str__(self):
         return 'Lmfit hi'
@@ -164,8 +166,17 @@ class QFit:
     def fit_values(self):
         return self.result.best_fit
 
+    def add_weight(self, array=None, mode='resonator', sigma=0.1):
+        if array is None:
+            weight_x = np.linspace(-1, 1, len(self._datax))
+            _sigma = sigma
+            muu = weight_x[np.argmin(np.log10(self._datay))]
+            self.weight = np.exp(-((weight_x-muu)**2 / (2.0 * _sigma**2)))
+            self.weight = (self.weight + 0.1) / 1.1
+
+
     def do_fit(self, verbose=None):
-        self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
+        self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method, weights=self.weight)
         if verbose:
             print(self.result.fit_report())
         self._fity = self.result.best_fit
@@ -187,6 +198,34 @@ class QFit:
             self._datay = self._datay[int(len(self._datay) * _win[0]):int(len(self._datay) * _win[1])]
             self._fity = self._fity[int(len(self._fity) * _win[0]):int(len(self._fity) * _win[1])]
             self._raw_y = self._raw_y[int(len(self._raw_y) * _win[0]):int(len(self._raw_y) * _win[1])]
+
+        if method == 'normalize':
+            s = (self._datay[-1] - self._datay[0]) / (self._datax[-1] - self._datax[0])
+            c = self._datay[0] - s * self._datax[0]
+            background = s * self._datax + c
+            self._datay -= background
+            # plt.plot(self._datax, background.real, '--', label='breal')
+            # plt.plot(self._datax, background.imag, '--', label='bimag')
+            # plt.legend()
+            # plt.plot(self._datax, self._raw_y)
+            # A = np.mean(np.abs(self._datay)[[0, -1]])
+            # self._datay = self._datay / A
+            # self._raw_y = self._raw_y / A
+
+        if method == 'linecomp':
+            # inspired and from David's code
+            _window = int(kwargs.get('window') * len(self._datax)) \
+                if kwargs.get('window') else int(0.06 * len(self._datax))
+            phase = np.unwrap(np.angle(self._datay))
+            line_fit = np.polyfit([np.mean(self._datax[:_window]), np.mean(self._datax[-_window:])],
+                                [np.mean(phase[:_window]), np.mean(phase[-_window:])], 1)
+
+            # plt.plot(self._datax, np.exp(-1j * line_fit[0] * self._datax).real, label='lcreal')
+            # plt.plot(self._datax, np.exp(-1j * line_fit[0] * self._datax).imag, label='lcimag')
+
+            self._datay = self._datay * np.exp(-1j * line_fit[0] * self._datax)
+            self.wash_params = [line_fit[0]]
+
 
     def cov_mat(self):
         return self.result.covar
@@ -240,7 +279,9 @@ class QFit:
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
 
-    def polar_plot(self, plot_settings={}, power=None, f0=None, id=None, suptitle=''):
+    def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
+        if self.wash_params:
+            self._fity = self._fity * np.exp(1j * self.wash_params[0] * self._datax)
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
@@ -271,10 +312,10 @@ class QFit:
         #     fit_info = '$Q_{int}= $' + str("{0:.1f}".format(self.fit_params('Qi') * 1e3)) + '    '
         #     fit_info += '$Q_{ext}= $' + str("{0:.1f}".format(self.fit_params('Qe_mag') * 1e3))
 
-        if power:
+        if power != 99999:
             fit_info += '    ' + '$P_{VNA}=$ ' + str(power) + 'dBm'
         if f0:
-            fit_info += '    ' + 'f0= ' + str("{0:.1f}".format(f0)) + 'MHZ'
+            fit_info += '    ' + 'f0= ' + str("{0:.4f}".format(f0)) + 'GHZ'
         if id:
             fit_info += '    ' + 'id= ' + str(id)
 
@@ -282,7 +323,8 @@ class QFit:
 
 
         if plot_settings.get('plot_guess', None) is not None:
-            ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, 'k--', label='inital fit')
+            ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, '--', label='inital fit', c='#d1d1e0')
+            ax2.plot(self._datax, 20*np.log10(np.abs(self._init_guess_y)), '--', label='inital fit', c='#d1d1e0')
 
         fig.tight_layout()
         # plt.show()

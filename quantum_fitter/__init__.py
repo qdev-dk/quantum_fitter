@@ -32,7 +32,7 @@ plt.show()
 
 """
 from ._fit import *
-# from ._labber import *
+from ._labber import *
 try:
     from lmfit import Model
 except ImportError:
