@@ -8,7 +8,7 @@ import quantum_fitter._model as md
 
 class QFit:
     def __init__(self, data_x, data_y=None, model=None, params_init=None, method='leastsq', **kwargs):
-        self._raw_y = data_y
+        self._raw_y = data_y.flatten()
         # data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
         self._datay, self._fity = data_y, None
@@ -222,8 +222,10 @@ class QFit:
 
             # plt.plot(self._datax, np.exp(-1j * line_fit[0] * self._datax).real, label='lcreal')
             # plt.plot(self._datax, np.exp(-1j * line_fit[0] * self._datax).imag, label='lcimag')
-
+            # plt.plot(self._datax, self._datay.imag)
             self._datay = self._datay * np.exp(-1j * line_fit[0] * self._datax)
+            # plt.plot(self._datax, np.exp(-1j * line_fit[0] * self._datax))
+            # plt.plot(self._datax, self._datay.imag, ls='--', c='grey')
             self.wash_params = [line_fit[0]]
 
 
@@ -280,8 +282,11 @@ class QFit:
             return self._fig, ax
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
+        angle = 1
         if self.wash_params:
             self._fity = self._fity * np.exp(1j * self.wash_params[0] * self._datax)
+            # angle = np.exp(-1j * (self._datax * self.result.values['phi1'] + self.result.values['phi2']))
+
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
@@ -297,8 +302,8 @@ class QFit:
         ax2.set_xlabel('Frequency / GHz')
         ax2.set_ylabel('S21(dB)')
 
-        ax3.plot(self._datax, np.angle(self._fity), 'r', label='best fit', linewidth=1.5)
-        ax3.scatter(self._datax, np.angle(self._raw_y), c='grey', s=1)
+        ax3.plot(self._datax, np.angle(self._fity*angle), 'r', label='best fit', linewidth=1.5)
+        ax3.scatter(self._datax, np.angle(self._raw_y*angle), c='grey', s=1)
         ax3.set_title('S21 Phase', fontdict={'fontsize': 10})
         ax3.set_xlabel('Frequency / GHz')
         ax3.set_ylabel('Angle / rad')
@@ -386,13 +391,12 @@ def read_dat(file_location: str, power):
     _power = df['Power'].to_numpy()
     _power_mask = np.argwhere(_power == power)  # Choose the power you fit
     freq = df['S21 frequency'].to_numpy()[_power_mask]
-    print(freq)
     mag = df['S21 magnitude'].to_numpy()[_power_mask]
     phase = df['S21 phase'].to_numpy()[_power_mask]
     S21 = mag * np.exp(1j * phase)
 
-    # Scale and centerize(?)the frequency
-    freq = freq * 1e-9
+    # Scale the frequency
+    freq = freq * 1e-6
 
     return freq, S21
 

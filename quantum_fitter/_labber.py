@@ -19,7 +19,7 @@ class LabberData:
         self._rawData, self._fitData, self._fitMask, self._fitID = None, None, None, None
 
         self._fitParamHistory, self._fitValueHistory = [], []
-        self.mode = None
+        self.mode, self.average = None, 0
         self._channelChoosen = []
 
     def pull_data(self, mode='resonator', **kwargs):
@@ -38,16 +38,13 @@ class LabberData:
             self._dataXMatrix = self.h5data['Traces']['VNA - S21_t0dt'][:]
             self._dataYMatrix = self.h5data['Traces']['VNA - S21'][:]
             self._dataYMatrix = np.vectorize(complex)(self._dataYMatrix[:, 0, :], self._dataYMatrix[:, 1, :]).T
-            import matplotlib.pyplot as plt
-            self._fitMask = np.ones((self._dataYMatrix.shape[1]), dtype=bool)
-
-            print(self._channelMatrix.shape)
+            # self._fitMask = np.ones((self._dataYMatrix.shape[1]), dtype=bool)
 
             if kwargs:
                 t_x, t_y = self.mask_data(**kwargs)
                 return t_x, t_y
 
-
+    # Extract the needed data
     def mask_data(self, **kwargs):
         for i in range(len(self.h5data['Data']['Channel names'][:])):
             self._channelName.append(self.h5data['Data']['Channel names'][i][0].decode("utf-8"))
@@ -56,10 +53,17 @@ class LabberData:
         self._channelNum = LabberData.get_channel_num(self._channelMatrix)
         fitIDlist = []
 
-        for key in kwargs:
-            channelNo = LabberData.find_str_args(self._channelName, key)
+        # Check if specify repetition in kwargs, if not, will use average
+        # Caution: Maybe we can use other words?
+        if not LabberData._find_str_args(self._channelName, 'repetition'):
+            if 'repetition' not in kwargs:
+                kwargs['repetition'] = 1
+                self.average = 1
 
-            # Make the code work even while typing only one number not list
+        for key in kwargs:
+            channelNo = LabberData._find_str_args(self._channelName, key)
+
+            # Make the code work even while typing only one number, change into list
             if not hasattr(kwargs[key], '__iter__'):
                 kwargs[key] = [kwargs[key]]
 
@@ -78,16 +82,24 @@ class LabberData:
             t_y = self._dataYMatrix[id]
         return t_x, t_y
 
-        # Extract the needed data
-
     def fit_data(self, model='ResonatorModel', resonator_plot=False, method=None, **kwargs):
         self._dataXMatrix *= 1e-9  # Change to GHz
         from matplotlib import pyplot as plt
         self._channelChoosen = self._get_channel_params_from_id(self._channelNum, self._fitID)
         if model == 'ResonatorModel':
+
+            # Check if average?
             for i in range(len(self._fitID)):
                 id = self._fitID[i]
-                t_n = qf.QFit(self.altspace(self._dataXMatrix[id], self._numData), self._dataYMatrix[id], model)
+                s21 = 0
+                if self.average == 1:
+                    start = int(id // self._channelNum[0] * self._channelNum[0])
+                    s21 = np.average(self._dataYMatrix[start:start+self._channelNum[0]], axis=0)
+
+                else:
+                    s21 = self._dataYMatrix[id]
+
+                t_n = qf.QFit(self.altspace(self._dataXMatrix[id], self._numData), s21, model)
                 t_n.guess()
 
                 _sigma, _window = 0.05, 0.06
@@ -109,11 +121,10 @@ class LabberData:
                 t_n.do_fit()
                 self._fitParamHistory.append(t_n.fit_params())
                 self._fitValueHistory.append(t_n.fit_values())
-                print(self._channelChoosen[i][LabberData.find_str_args(self._channelName, 'power')])
                 if resonator_plot:
                     t_n.polar_plot(id=id,
-                                   f0=self._channelChoosen[i][LabberData.find_str_args(self._channelName, 'freq')]*1e-9,
-                                   power=self._channelChoosen[i][LabberData.find_str_args(self._channelName, 'power')])
+                                   f0=self._channelChoosen[i][LabberData._find_str_args(self._channelName, 'freq')] * 1e-9,
+                                   power=self._channelChoosen[i][LabberData._find_str_args(self._channelName, 'power')])
             self._fitValueHistory = np.array(self._fitValueHistory)
             return t_n
 
@@ -183,7 +194,7 @@ class LabberData:
         return _channelC
 
     @staticmethod
-    def _data_structure_change(self, path, row, data):
+    def _data_structure_change(path, row, data):
         """
         The aim here is to modify the h5 file to better display the fitting parameters.
         :param path: The h5 file path
@@ -202,11 +213,12 @@ class LabberData:
         return np.linspace(start, stop, count, endpoint=False)
 
     @staticmethod
-    def find_str_args(choices: list, target):
+    def _find_str_args(choices: list, target, **kwargs):
         for i in range(len(choices)):
             if target in choices[i].lower():
                 return i
-        print('Didn\'t find the corresponding channel')
+        print('Didn\'t find corresponding channel')
+        return None
 
     @staticmethod
     def get_channel_num(channel_matrix):
