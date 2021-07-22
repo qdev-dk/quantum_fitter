@@ -177,6 +177,7 @@ class QFit:
 
     def do_fit(self, verbose=None):
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method, weights=self.weight)
+        # self._params = self.result.params
         if verbose:
             print(self.result.fit_report())
         self._fity = self.result.best_fit
@@ -361,8 +362,8 @@ class QFit:
 
     def _params_stderr(self):
         stderr = {}
-        for param in self.result.params.keys():
-            stderr[param] = self.result.params.get(params).stderr
+        for param in self.result.params:
+            stderr[param] = self.result.params[param].stderr
         return stderr
 
     def _init_params(self):
@@ -399,5 +400,38 @@ def read_dat(file_location: str, power):
     freq = freq * 1e-6
 
     return freq, S21
+
+def resonator_fit_all(file_location: str, power_limit=None):
+    import pandas as pd
+    df = pd.read_csv(file_location, delimiter='\t', header=0,
+                     skiprows=lambda x: x in [0, 2])
+    df.columns = ['Power'] + list(df.columns[1:])
+    power = df['Power'].unique()
+    Qi_list, Qi_err = [], []
+    Qe_list, Qe_err = [], []
+    if power_limit:
+        print(power)
+        power = power[(power>power_limit[0]) & (power<power_limit[1])]
+    for p in power:
+        freq, S21 = read_dat(file_location, power=p)
+        t3 = QFit(freq, S21, model='ResonatorModel')
+        t3.guess()
+        t3.wash(method='linecomp', window=0.05)
+        t3.do_fit()
+        Qi_list.append(t3.fit_params('Qi')*1e3)
+        Qi_err.append(t3.err_params('Qi')*1e3)
+        Qe_list.append(t3.fit_params('Qe_mag')*1e3)
+        Qe_err.append(t3.err_params('Qe_mag')*1e3)
+    fig, ax = plt.subplots()
+    ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
+    ax.set_xlabel('Power(dB)')
+    ax.set_ylabel('$Q_{int}$', fontsize=14)
+    ax2 = ax.twinx()
+    ax2.errorbar(power, Qe_list, yerr=Qe_err, fmt='x', c='c', label='Qe')
+    ax2.set_ylabel('$Q_{ext}$', fontsize=14)
+    ax.legend(loc="lower left")
+    # plt.ylim(top=1e6, bottom=1e4)
+    plt.tight_layout()
+    plt.show()
 
 

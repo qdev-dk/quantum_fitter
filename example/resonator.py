@@ -7,24 +7,24 @@ import sys
 
 # Data read from h5 file by Labber
 ##=====================================
-sys.path.append('D:/Labber/Script')
-import Labber
-datasource = '../_resonator/VNA_all_res_v_pow.hdf5'
-qubit = 3
-ent = range(142, 150, 31)
-pow = -44
+# sys.path.append('D:/Labber/Script')
+# import Labber
+# datasource = '../_resonator/VNA_all_res_v_pow.hdf5'
+# qubit = 3
+# ent = range(142, 150, 31)
+# pow = -44
 
 #=======================================
 # Else data read from .dat file
-# freq, S21 = qfit.read_dat('../_resonator/MDC_25.dat', power=pow)
+freq, S21 = qfit.read_dat('../_resonator/MDC_25.dat', power=pow)
 
 #=======================================
 # Better to move the center of frequency to 0
 dataChannel = 'VNA - S21'
-Lfile = Labber.LogFile(datasource)
-[xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=143)
-freq = xData*1e-9  # Convert to µs unit
-S21 = yData
+# Lfile = Labber.LogFile(datasource)
+# [xData, yData] = Lfile.getTraceXY(y_channel=dataChannel, entry=143)
+# freq = xData*1e-9  # Convert to µs unit
+# S21 = yData
 
 # S21 -= np.mean(S21)
 # f0 = freq[int(len(freq)/2)]
