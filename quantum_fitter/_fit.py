@@ -200,7 +200,7 @@ class QFit:
             self._fity = self._fity[int(len(self._fity) * _win[0]):int(len(self._fity) * _win[1])]
             self._raw_y = self._raw_y[int(len(self._raw_y) * _win[0]):int(len(self._raw_y) * _win[1])]
 
-        if method == 'normalize':
+        if method == 'linearcomp':
             s = (self._datay[-1] - self._datay[0]) / (self._datax[-1] - self._datax[0])
             c = self._datay[0] - s * self._datax[0]
             background = s * self._datax + c
@@ -213,7 +213,7 @@ class QFit:
             # self._datay = self._datay / A
             # self._raw_y = self._raw_y / A
 
-        if method == 'linecomp':
+        if method == 'complexcomp':
             # inspired and from David's code
             _window = int(kwargs.get('window') * len(self._datax)) \
                 if kwargs.get('window') else int(0.06 * len(self._datax))
@@ -397,7 +397,7 @@ def read_dat(file_location: str, power):
     S21 = mag * np.exp(1j * phase)
 
     # Scale the frequency
-    freq = freq * 1e-6
+    freq = freq * 1e-9
 
     return freq, S21
 
@@ -410,18 +410,32 @@ def resonator_fit_all(file_location: str, power_limit=None):
     Qi_list, Qi_err = [], []
     Qe_list, Qe_err = [], []
     if power_limit:
-        print(power)
-        power = power[(power>power_limit[0]) & (power<power_limit[1])]
+        power = power[(power > power_limit[0]) & (power < power_limit[1])]
     for p in power:
         freq, S21 = read_dat(file_location, power=p)
         t3 = QFit(freq, S21, model='ResonatorModel')
         t3.guess()
-        t3.wash(method='linecomp', window=0.05)
         t3.do_fit()
+        qierr = t3.err_params('Qi')
+        qeerr = t3.err_params('Qe_mag')
+        if t3.err_params('Qi') is None:
+            for _win in range(2, 7):
+                freq, S21 = read_dat(file_location, power=p)
+                t3 = QFit(freq, S21, model='ResonatorModel')
+                t3.guess()
+                t3.wash(method='complexcomp', window=_win*1e-2)
+                t3.do_fit()
+                qierr = t3.err_params('Qi')
+                qeerr = t3.err_params('Qe_mag')
+                if t3.err_params('Qi') is not None:
+                    break
+        if t3.err_params('Qi') is None:
+            qierr = 0.2*t3.fit_params('Qi')
+            qeerr = 0.2*t3.fit_params('Qe_mag')
         Qi_list.append(t3.fit_params('Qi')*1e3)
-        Qi_err.append(t3.err_params('Qi')*1e3)
+        Qi_err.append(qierr*1e3)
         Qe_list.append(t3.fit_params('Qe_mag')*1e3)
-        Qe_err.append(t3.err_params('Qe_mag')*1e3)
+        Qe_err.append(qeerr*1e3)
     fig, ax = plt.subplots()
     ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
     ax.set_xlabel('Power(dB)')
@@ -430,7 +444,8 @@ def resonator_fit_all(file_location: str, power_limit=None):
     ax2.errorbar(power, Qe_list, yerr=Qe_err, fmt='x', c='c', label='Qe')
     ax2.set_ylabel('$Q_{ext}$', fontsize=14)
     ax.legend(loc="lower left")
-    # plt.ylim(top=1e6, bottom=1e4)
+    ax.set_ylim(top=1.1*max(Qi_list), bottom=0.9*min(Qi_list))
+    ax2.set_ylim(top=1.1*max(Qe_list), bottom=0.9*min(Qe_list))
     plt.tight_layout()
     plt.show()
 

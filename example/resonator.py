@@ -16,7 +16,8 @@ import sys
 
 #=======================================
 # Else data read from .dat file
-freq, S21 = qfit.read_dat('../_resonator/MDC_25.dat', power=pow)
+p = -33
+freq, S21 = qfit.read_dat('../_resonator/rs_vna_S21_power_set_S21_frequency_set - 24.dat', power=p)
 
 #=======================================
 # Better to move the center of frequency to 0
@@ -31,7 +32,7 @@ dataChannel = 'VNA - S21'
 # freq = freq - f0
 
 # Do initialize the model
-t5 = qfit.QFit(freq, S21, model='ResonatorModel')
+t5 = qfit.QFit(freq*1e-3, S21, model='ResonatorModel')
 # Cut the data to avoid over-fitting from tails
 # t5.wash(method='cut', window=[19/40, 21/40])
 
@@ -39,14 +40,15 @@ t5 = qfit.QFit(freq, S21, model='ResonatorModel')
 
 # Do a robust guess (Automatically store the guess parameters), and store the initial guess value for check
 t5.guess()
+t5.wash(method='complexcomp', window=0.03)
+# t5.add_weight(sigma=0.1)
 # Start fit
-t5.do_fit()
-
+t5.do_fit(verbose=1)
+print(t5.err_params('Qi'))
 # Plot the data
-t5.polar_plot(power=pow, id=142, plot_settings={'plot_guess': 0})
+t5.polar_plot(power=p, id=142, plot_settings={'plot_guess': 0})
 
-t5.plot_cov_mat()
+# t5.plot_cov_mat()
 plt.show()
-fit_s21 = t5.fit_values()
 
 
