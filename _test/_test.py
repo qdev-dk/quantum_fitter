@@ -9,8 +9,8 @@ import quantum_fitter as qfit
 # sys.path.append('D:/Labber/Script')
 # import Labber
 #
-datasource = '../_resonator/rs_vna_S21_power_set_S21_frequency_set - 24.dat'
-qfit.resonator_fit_all(datasource)
+datasource = '../_resonator/mid011.dat'
+qfit.resonator_fit_all(datasource, power_limit=[-20, 0])
 
 # # qubit = 3
 # # entry = 26

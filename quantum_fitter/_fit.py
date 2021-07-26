@@ -181,6 +181,8 @@ class QFit:
         if verbose:
             print(self.result.fit_report())
         self._fity = self.result.best_fit
+        if self.wash_params:
+            self._fity = self._fity * np.exp(1j * self.wash_params[0] * self._datax)
 
     def wash(self, method='savgol', **kwargs):
         if method == 'savgol':
@@ -284,10 +286,6 @@ class QFit:
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
         angle = 1
-        if self.wash_params:
-            self._fity = self._fity * np.exp(1j * self.wash_params[0] * self._datax)
-            # angle = np.exp(-1j * (self._datax * self.result.values['phi1'] + self.result.values['phi2']))
-
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
@@ -412,40 +410,45 @@ def resonator_fit_all(file_location: str, power_limit=None):
     if power_limit:
         power = power[(power > power_limit[0]) & (power < power_limit[1])]
     for p in power:
-        freq, S21 = read_dat(file_location, power=p)
-        t3 = QFit(freq, S21, model='ResonatorModel')
-        t3.guess()
-        t3.do_fit()
-        qierr = t3.err_params('Qi')
-        qeerr = t3.err_params('Qe_mag')
-        if t3.err_params('Qi') is None:
-            for _win in range(2, 7):
-                freq, S21 = read_dat(file_location, power=p)
-                t3 = QFit(freq, S21, model='ResonatorModel')
-                t3.guess()
-                t3.wash(method='complexcomp', window=_win*1e-2)
-                t3.do_fit()
-                qierr = t3.err_params('Qi')
-                qeerr = t3.err_params('Qe_mag')
-                if t3.err_params('Qi') is not None:
-                    break
-        if t3.err_params('Qi') is None:
-            qierr = 0.2*t3.fit_params('Qi')
-            qeerr = 0.2*t3.fit_params('Qe_mag')
-        Qi_list.append(t3.fit_params('Qi')*1e3)
-        Qi_err.append(qierr*1e3)
-        Qe_list.append(t3.fit_params('Qe_mag')*1e3)
-        Qe_err.append(qeerr*1e3)
+        _success = False
+        for _win in range(0, 7):
+            print(p)
+            freq, S21 = read_dat(file_location, power=p)
+            t3 = QFit(freq, S21, model='ResonatorModel')
+            t3.guess()
+            t3.wash(method='complexcomp', window=_win*1e-2)
+            t3.do_fit()
+            qierr = t3.err_params('Qi')
+            qeerr = t3.err_params('Qe_mag')
+
+            # Check if fit fails?
+            if t3.err_params('Qi') is not None:
+                if t3.fit_params('Qi') < 1e5:
+                    if t3.err_params('Qi') < 0.5 * t3.fit_params('Qi'):
+                        Qi_list.append(t3.fit_params('Qi') * 1e3)
+                        Qi_err.append(qierr * 1e3)
+                        Qe_list.append(t3.fit_params('Qe_mag') * 1e3)
+                        Qe_err.append(qeerr * 1e3)
+                        _success = True
+                        break
+
+        if _success is False:
+            print('Not able to estimate in this power: ' + str(p))
+            Qi_list.append(0)
+            Qi_err.append(0)
+            Qe_list.append(0)
+            Qe_err.append(0)
+
     fig, ax = plt.subplots()
     ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
     ax.set_xlabel('Power(dB)')
-    ax.set_ylabel('$Q_{int}$', fontsize=14)
+    ax.set_ylabel('$Q_{int}$', fontsize=14, c='r')
     ax2 = ax.twinx()
     ax2.errorbar(power, Qe_list, yerr=Qe_err, fmt='x', c='c', label='Qe')
-    ax2.set_ylabel('$Q_{ext}$', fontsize=14)
+    ax2.set_ylabel('$Q_{ext}$', fontsize=14, c='c')
     ax.legend(loc="lower left")
-    ax.set_ylim(top=1.1*max(Qi_list), bottom=0.9*min(Qi_list))
-    ax2.set_ylim(top=1.1*max(Qe_list), bottom=0.9*min(Qe_list))
+    ax.set_ylim(top=1.1*max(Qi_list) if max(Qi_list) < 1e7 else 1e6, bottom=0.9*min(Qi_list))
+    ax2.set_ylim(top=1.1*max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9*min(Qe_list))
     plt.tight_layout()
     plt.show()
 

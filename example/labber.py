@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 # copyfile('../_resonator/VNA_all_res_v_pow.hdf5', '../_resonator/VNA_all_res_v_pow_test.hdf5')
 
 
-t5 = qf.LabberData('Z://Kian G//Resonator_power_sweeps_20dBm_attenuation.hdf5')
-t5.pull_data(power=[10], frequency=[6.8447e9])
+t5 = qf.LabberData('Z://Kian G//Resonator_power_sweeps_40dBmatt_TWPA_on_2.hdf5')
+t5.pull_data(power=[10], frequency=[5.2466e9])
 # method with 'lc', 'aw', 'lcaw' or None
-t5.fit_data(model='ResonatorModel', resonator_plot=True, method='lc', window=0.05)
+t5.fit_data(model='ResonatorModel', resonator_plot=True, window=0.03)
 plt.show()
 
 # t5 = qf.LabberData('Z://Kian G//Resonator_power_sweeps_20dBm_attenuation.hdf5')

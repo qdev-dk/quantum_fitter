@@ -55,10 +55,12 @@ class LabberData:
 
         # Check if specify repetition in kwargs, if not, will use average
         # Caution: Maybe we can use other words?
-        if not LabberData._find_str_args(self._channelName, 'repetition'):
+        if LabberData._find_str_args(self._channelName, 'rep') is not False:
+            print('what')
             if 'repetition' not in kwargs:
                 kwargs['repetition'] = 1
                 self.average = 1
+                print('arrive here')
 
         for key in kwargs:
             channelNo = LabberData._find_str_args(self._channelName, key)
@@ -218,7 +220,7 @@ class LabberData:
             if target in choices[i].lower():
                 return i
         print('Didn\'t find corresponding channel')
-        return None
+        return False
 
     @staticmethod
     def get_channel_num(channel_matrix):

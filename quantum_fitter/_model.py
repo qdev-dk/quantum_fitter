@@ -87,7 +87,6 @@ class ResonatorModel(lmfit.model.Model):
 
         params = self.make_params(f_0=guess[0], Qi=guess[1], Qe_mag=guess[2], Qe_theta=guess[3],
                                   A=guess[4], alpha=guess[5], phi1=guess[6], phi2=guess[7])
-        print(guess)
 
         params['%sf_0' % self.prefix].set(min=0.9 * f0_guess, max=1.1 * f0_guess)
         params['%sQi' % self.prefix].set(min=0, max=20*Qi_guess)
