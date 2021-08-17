@@ -3,16 +3,31 @@ import quantum_fitter as qf
 import sys
 from shutil import copyfile
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Creat a test file in case of damaging
 # copyfile('../_resonator/VNA_all_res_v_pow.hdf5', '../_resonator/VNA_all_res_v_pow_test.hdf5')
 
+t5 = qf.LabberData(filePath='C:/Users/Gao_z/Desktop/KU/ResonatorDataTest/Resonator_power_sweeps_40dBmatt_TWPA_on_2.hdf5')
+# qf.fit_all_labber_resonator(file_loc='C:/Users/Gao_z/Desktop/KU/ResonatorDataTest/Resonator_power_sweeps_40dBmatt_TWPA_on_2.hdf5',
+#                             frequency=6.7333*1e9,
+#                             power=list(range(-50, -40, 2)))
 
-t5 = qf.LabberData('Z://Kian G//Resonator_power_sweeps_40dBmatt_TWPA_on_2.hdf5')
-t5.pull_data(repetition=5, power=[10], frequency=[5.2466e9])
+# freq, s21 = t5.fit_all_labber_resonator(repetition=2, power=list(range(-10, 0, 2)), frequency=[6.064*1e9])
+# print(freq, s21)
+
 # method with 'lc', 'aw', 'lcaw' or None
-t5.fit_data(model='ResonatorModel', resonator_plot=True, window=0.03)
+t5.pull_data(frequency=6.7333*1e9, power=[-50])
+t5.fit_data(model='ResonatorModel', method='aw', resonator_plot=True, window=0.02, sigma=0.15, verbose=1)
+# t5.fit_data(model='ResonatorModel', resonator_plot=True, window=0.06, sigma=0.5, verbose=1)
 plt.show()
+
+
+
+
+
+
+
 
 # t5 = qf.LabberData('Z://Kian G//Resonator_power_sweeps_20dBm_attenuation.hdf5')
 # t5.pull_data(power=[-50], frequency=[6.8447e9])

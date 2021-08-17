@@ -1,5 +1,4 @@
 from lmfit import Model, Minimizer, Parameters, report_fit, models
-from scipy.signal import savgol_filter
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -176,7 +175,8 @@ class QFit:
 
 
     def do_fit(self, verbose=None):
-        self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method, weights=self.weight)
+        self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method, weights=self.weight
+                                       , nan_policy='omit')
         # self._params = self.result.params
         if verbose:
             print(self.result.fit_report())
@@ -186,6 +186,7 @@ class QFit:
 
     def wash(self, method='savgol', **kwargs):
         if method == 'savgol':
+            from scipy.signal import savgol_filter
             _win_l = kwargs.get('window_length') if kwargs.get('window_length') else 3
             _po = kwargs.get('polyorder') if kwargs.get('polyorder') else 2
             if np.iscomplexobj(self._datay):
@@ -231,6 +232,34 @@ class QFit:
             # plt.plot(self._datax, self._datay.imag, ls='--', c='grey')
             self.wash_params = [line_fit[0]]
 
+        if method == 'fft':
+            from scipy.fft import rfft, rfftfreq, irfft
+            from scipy.signal import savgol_filter
+            if np.iscomplexobj(self._datay):
+                yf = rfft(self._datay.real)
+                xf = rfftfreq(len(self._datay.real), 1 / len(self._datay.real))
+                yfi = rfft(self._datay.imag)
+                xfi = rfftfreq(len(self._datay.imag), 1 / len(self._datay.imag))
+
+                target_idx = int(len(xf) / 64)
+                yf[target_idx:] = savgol_filter(yf[target_idx:], window_length=5, polyorder=3)
+                # yf[target_idx:] = 0
+                self._datay = irfft(yf).astype('complex128')
+
+                target_idx = int(len(xfi) / 64)
+                yfi[target_idx:] = savgol_filter(yfi[target_idx:], window_length=5, polyorder=3)
+                # yfi[target_idx:] = 0
+                self._datay += 1j * irfft(yfi).astype('complex128')
+                self._datay = np.append(self._datay, self._datay[-1])
+                self._datay[:8] = self._datay[8:16]
+                self._datay[-8:] = self._datay[-16:-8]
+                plt.plot(self._datax, np.abs(self._datay))
+                plt.plot(self._datax, np.abs(self._raw_y), alpha=0.3)
+                plt.show()
+
+            if method == 'focus':
+                np.argmin(np.log10(np.abs(self._datay)))
+
 
     def cov_mat(self):
         return self.result.covar
@@ -250,7 +279,6 @@ class QFit:
 
     def pretty_print(self, plot_settings=None):
         '''Basic function for plotting the result of a fit'''
-        plt.figure()
         fit_params, error_params, fit_value = self.result.best_values, self._params_stderr(), \
                                               self.result.best_fit.flatten()
         _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
@@ -285,7 +313,7 @@ class QFit:
             return self._fig, ax
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
-        angle = 1
+        angle = np.exp(-1j*np.angle(self._fity[0]))
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
@@ -331,7 +359,6 @@ class QFit:
             ax2.plot(self._datax, 20*np.log10(np.abs(self._init_guess_y)), '--', label='inital fit', c='#d1d1e0')
 
         fig.tight_layout()
-        # plt.show()
 
     def pdf_print(self, file_dir, filename, plot_settings=None):
         import datetime
@@ -417,8 +444,10 @@ def resonator_fit_all(file_location: str, power_limit=None):
             t3 = QFit(freq, S21, model='ResonatorModel')
             t3.guess()
             t3.wash(method='complexcomp', window=_win*1e-2)
+            t3.wash(method='fft')
             t3.do_fit()
             qierr = t3.err_params('Qi')
+            print(qierr)
             qeerr = t3.err_params('Qe_mag')
 
             # Check if fit fails?
@@ -440,6 +469,7 @@ def resonator_fit_all(file_location: str, power_limit=None):
             Qe_err.append(0)
 
     fig, ax = plt.subplots()
+    print(power, Qi_list)
     ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
     ax.set_xlabel('Power(dB)')
     ax.set_ylabel('$Q_{int}$', fontsize=14, c='r')
@@ -451,5 +481,3 @@ def resonator_fit_all(file_location: str, power_limit=None):
     ax2.set_ylim(top=1.1*max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9*min(Qe_list))
     plt.tight_layout()
     plt.show()
-
-
