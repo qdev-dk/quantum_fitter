@@ -33,7 +33,6 @@ plt.show()
 """
 from ._fit import *
 from ._labber import *
-import numdifftools
 try:
     from lmfit import Model
 except ImportError:
