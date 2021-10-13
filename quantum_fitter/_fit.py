@@ -253,9 +253,6 @@ class QFit:
                 self._datay = np.append(self._datay, self._datay[-1])
                 self._datay[:8] = self._datay[8:16]
                 self._datay[-8:] = self._datay[-16:-8]
-                plt.plot(self._datax, np.abs(self._datay))
-                plt.plot(self._datax, np.abs(self._raw_y), alpha=0.3)
-                plt.show()
 
             if method == 'focus':
                 np.argmin(np.log10(np.abs(self._datay)))
@@ -438,13 +435,14 @@ def resonator_fit_all(file_location: str, power_limit=None):
         power = power[(power > power_limit[0]) & (power < power_limit[1])]
     for p in power:
         _success = False
-        for _win in range(0, 7):
+        for _win in range(0, 2, 7):
             print(p)
             freq, S21 = read_dat(file_location, power=p)
             t3 = QFit(freq, S21, model='ResonatorModel')
             t3.guess()
-            t3.wash(method='complexcomp', window=_win*1e-2)
-            t3.wash(method='fft')
+            if _win != 0:
+                t3.wash(method='complexcomp', window=_win*1e-2)
+            # t3.wash(method='fft')
             t3.do_fit()
             qierr = t3.err_params('Qi')
             print(qierr)

@@ -131,7 +131,6 @@ class LabberData:
                     _sigma = kwargs['sigma']
                 if 'window' in kwargs:
                     _window = kwargs['window']
-                print(_window)
 
                 if method is None:
                     pass
@@ -298,7 +297,7 @@ def get_file_name_from_path(path):
 
 
 
-def fit_all_labber_resonator(file_loc, power=None, frequency=None, repetition=None):
+def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=False):
     tn = qf.LabberData(file_loc)
 
     if not hasattr(power, '__iter__'):
@@ -315,10 +314,11 @@ def fit_all_labber_resonator(file_loc, power=None, frequency=None, repetition=No
         print(power[p])
         _success = False
         for _win in range(0, 8, 2):
-            freq, S21 = freq_all[p], S21_all[p]
+            freq, S21 = freq_all[p] * 1e-9, S21_all[p]
             t3 = qf.QFit(freq, S21, model='ResonatorModel')
             t3.guess()
-            t3.wash(method='complexcomp', window=_win * 1e-2)
+            if _win != 0:
+                t3.wash(method='complexcomp', window=_win * 1e-2)
             t3.wash(method='fft')
             t3.do_fit()
             qierr = t3.err_params('Qi')
@@ -327,37 +327,41 @@ def fit_all_labber_resonator(file_loc, power=None, frequency=None, repetition=No
 
             # Check if fit fails?
             if t3.err_params('Qi') is not None:
-                if t3.fit_params('Qi') < 1e5:
+                if t3.fit_params('Qi') < 1e4:
                     if t3.err_params('Qi') < 0.5 * t3.fit_params('Qi'):
                         Qi_list.append(t3.fit_params('Qi') * 1e3)
                         Qi_err.append(qierr * 1e3)
                         Qe_list.append(t3.fit_params('Qe_mag') * 1e3)
                         Qe_err.append(qeerr * 1e3)
                         _success = True
-                        t3.polar_plot(power=power[p])
+                        if plot_all:
+                            t3.polar_plot(power=power[p])
                         break
 
         if _success is False:
             freq, S21 = freq_all[p], S21_all[p]
             t3 = qf.QFit(freq, S21, model='ResonatorModel')
             t3.guess()
-            t3.add_weight(sigma=0.1)
+            t3.add_weight(sigma=0.15)
             t3.wash(method='fft')
             t3.do_fit()
             qierr = t3.err_params('Qi')
             qeerr = t3.err_params('Qe_mag')
             if t3.err_params('Qi') is not None:
-                if t3.fit_params('Qi') < 1e5:
+                if t3.fit_params('Qi') < 1e4:
                     if t3.err_params('Qi') < 0.5 * t3.fit_params('Qi'):
                         Qi_list.append(t3.fit_params('Qi') * 1e3)
                         Qi_err.append(qierr * 1e3)
                         Qe_list.append(t3.fit_params('Qe_mag') * 1e3)
                         Qe_err.append(qeerr * 1e3)
+                        if plot_all:
+                            t3.polar_plot(power=power[p])
             else:
                 Qi_list.append(0)
                 Qi_err.append(0)
                 Qe_list.append(0)
                 Qe_err.append(0)
+                print('Fails in fitting', power[p], 'dB, assign 0,0 to Qi, Qe')
 
     fig, ax = plt.subplots()
     ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
