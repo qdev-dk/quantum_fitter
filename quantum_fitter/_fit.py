@@ -6,7 +6,7 @@ import quantum_fitter._model as md
 
 
 class QFit:
-    def __init__(self, data_x, data_y=None, model=None, params_init=None, method='leastsq', **kwargs):
+    def __init__(self, data_x, data_y=None, model=None, params_init=None, method='least_squares', **kwargs):
         self._raw_y = data_y.flatten()
         # data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
@@ -325,12 +325,14 @@ class QFit:
         ax2.set_title('S21 Mag', fontdict={'fontsize': 10})
         ax2.set_xlabel('Frequency / GHz')
         ax2.set_ylabel('S21(dB)')
+        ax2.ticklabel_format(useOffset=False)
 
         ax3.plot(self._datax, np.angle(self._fity*angle), 'r', label='best fit', linewidth=1.5)
         ax3.scatter(self._datax, np.angle(self._raw_y*angle), c='grey', s=1)
         ax3.set_title('S21 Phase', fontdict={'fontsize': 10})
         ax3.set_xlabel('Frequency / GHz')
         ax3.set_ylabel('Angle / rad')
+        ax3.ticklabel_format(useOffset=False)
 
         # if self._qmodel.name == 'ResonatorModel':
         fit_info = '$Q_{int}= $'+str("{0:.1f}".format(self.fit_params('Qi')*1e3))+'    '

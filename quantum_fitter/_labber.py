@@ -297,14 +297,15 @@ def get_file_name_from_path(path):
 
 
 
-def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=False):
+def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=False, attenuation=0):
     tn = qf.LabberData(file_loc)
 
     if not hasattr(power, '__iter__'):
         power = [power]
         # if power_limit:
         #     power = power[(power > power_limit[0]) & (power < power_limit[1])]
-    power = reverse(power)
+    power = np.sort(power)[::-1]  # Automatically sort in descend order
+
     freq_all, S21_all = tn.pull_data(power=power, frequency=frequency)
     # method with 'lc', 'aw', 'lcaw' or None
 
@@ -323,10 +324,9 @@ def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=Fals
             t3.do_fit()
             qierr = t3.err_params('Qi')
             qeerr = t3.err_params('Qe_mag')
-            print(t3.fit_params('Qi'), qierr)
 
             # Check if fit fails?
-            if t3.err_params('Qi') is not None:
+            if t3.err_params('Qi') and t3.err_params('Qe_mag') is not None:
                 if t3.fit_params('Qi') < 1e4:
                     if t3.err_params('Qi') < 0.5 * t3.fit_params('Qi'):
                         Qi_list.append(t3.fit_params('Qi') * 1e3)
@@ -347,7 +347,8 @@ def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=Fals
             t3.do_fit()
             qierr = t3.err_params('Qi')
             qeerr = t3.err_params('Qe_mag')
-            if t3.err_params('Qi') is not None:
+            print(t3.fit_params('Qi'), qierr)
+            if t3.err_params('Qi') and t3.err_params('Qe_mag') is not None:
                 if t3.fit_params('Qi') < 1e4:
                     if t3.err_params('Qi') < 0.5 * t3.fit_params('Qi'):
                         Qi_list.append(t3.fit_params('Qi') * 1e3)
@@ -356,21 +357,29 @@ def fit_all_labber_resonator(file_loc, power=None, frequency=None, plot_all=Fals
                         Qe_err.append(qeerr * 1e3)
                         if plot_all:
                             t3.polar_plot(power=power[p])
-            else:
-                Qi_list.append(0)
-                Qi_err.append(0)
-                Qe_list.append(0)
-                Qe_err.append(0)
-                print('Fails in fitting', power[p], 'dB, assign 0,0 to Qi, Qe')
+                            break
+
+            Qi_list.append(0)
+            Qi_err.append(0)
+            Qe_list.append(0)
+            Qe_err.append(0)
+            print('Fails in fitting', power[p], 'dBm, assign 0,0 to Qi, Qe')
 
     fig, ax = plt.subplots()
+
+    if attenuation:
+        power -= attenuation
+
     ax.errorbar(power, Qi_list, yerr=Qi_err, fmt='o', c='r', label='Qi')
-    ax.set_xlabel('Power(dB)')
+    ax.set_xlabel('Power(dBm)')
     ax.set_ylabel('$Q_{int}$', fontsize=14, c='r')
     ax2 = ax.twinx()
     ax2.errorbar(power, Qe_list, yerr=Qe_err, fmt='x', c='c', label='Qe')
     ax2.set_ylabel('$Q_{ext}$', fontsize=14, c='c')
-    ax.legend(loc="lower left")
+    ax2.legend(loc="upper right")
+    ax2.ticklabel_format(style='scientific', scilimits=(0, 3))
+    ax.ticklabel_format(style='scientific',  scilimits=(0, 3))
+    ax.legend(loc='upper left')
     ax.set_ylim(top=1.1 * max(Qi_list) if max(Qi_list) < 1e7 else 1e6, bottom=0.9 * min(Qi_list))
     ax2.set_ylim(top=1.1 * max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9 * min(Qe_list))
     plt.title('Fit at ' + str(frequency * 1e-9)[:5] + ' GHz')
