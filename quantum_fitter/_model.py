@@ -22,7 +22,7 @@ class ComplexResonatorModel(lmfit.model.Model):
     The code below is from https://lmfit.github.io/lmfit-py/examples/
     example_complex_resonator_model.html#sphx-glr-download-examples-example-complex-resonator-model-py
     """
-    __doc__ = "Complex Resonator model" + lmfit.models.COMMON_DOC
+    __doc__ = "Complex Resonator model" + lmfit.models.COMMON_INIT_DOC
 
     def __init__(self, *args, **kwargs):
         # pass in the defining equation so the user doesn't have to later.
@@ -60,7 +60,7 @@ class ComplexResonatorModel(lmfit.model.Model):
 
 
 class ResonatorModel(lmfit.model.Model):
-    __doc__ = "Resonator model" + lmfit.models.COMMON_DOC
+    __doc__ = "Resonator model" + lmfit.models.COMMON_INIT_DOC
 
     def __init__(self, *args, **kwargs):
         # pass in the defining equation so the user doesn't have to later.
