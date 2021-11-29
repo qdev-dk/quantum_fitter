@@ -290,7 +290,7 @@ class QFit:
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
             ax.plot(self._datax[0], fit_value[0], 'o', markersize=0,
-                    label='{}: {:4.4}±{:4.4}'.format(key, fit_params[key], error_params[key]))
+                    label='{}: {:4.4}±{:4.4}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
         # Rescale plot if user wants it:
         if plot_settings is not None:
             ax.set_xlabel(plot_settings.get('x_label', 'x_label not set'))
@@ -481,3 +481,9 @@ def resonator_fit_all(file_location: str, power_limit=None):
     ax2.set_ylim(top=1.1*max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9*min(Qe_list))
     plt.tight_layout()
     plt.show()
+
+def str_none_if_none(stderr):
+    if stderr is None:
+        return 'None'
+    else:
+        return stderr
