@@ -1,0 +1,21 @@
+quantum\_fitter.tests package
+=============================
+
+Submodules
+----------
+
+quantum\_fitter.tests.test\_installation module
+-----------------------------------------------
+
+.. automodule:: quantum_fitter.tests.test_installation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: quantum_fitter.tests
+   :members:
+   :undoc-members:
+   :show-inheritance:
