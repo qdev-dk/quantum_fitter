@@ -21,7 +21,7 @@ setup(
     name="quantum_fitter",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    python_requires=">=3.9",
+    python_requires=">=3.7",
     install_requires=required_packages,
     author= "Kian Gao",
     author_email="shp593@alumni.ku.dk",

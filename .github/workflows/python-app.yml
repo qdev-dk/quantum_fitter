@@ -29,9 +29,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     - uses: ./.github/actions/install-dependencies-and-quantum_fitter
-    - name: disable_telemetry
-      shell: bash -l {0}
-      run: sed -i "s/\(enabled *= *\).*/\1False/" ./quantum_fitter/conf/telemetry.ini
 
     - name: Run Mypy
       run: mypy quantum_fitter
