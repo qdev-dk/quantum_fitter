@@ -3,7 +3,7 @@ import quantum_fitter as qf
 import numpy as np
 import matplotlib.pyplot as plt
 import h5py
-
+from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union, Any
 
 class LabberData:
     def __init__(self, filePath=None, channelName=None, powerName: str = None, frequencyName=None, mode='resonator'):
@@ -11,17 +11,23 @@ class LabberData:
 
         self.h5data = h5py.File(self._filePath, 'r')
 
-        self._channelName, self._channelMatrix, self._dataXMatrix, self._dataYMatrix = list(), None, None, None
-        self._numData, self._channelNum = None, None
+        self._channelName: List[Any] = list()
+        self._channelMatrix = None
+        self._dataXMatrix = None
+        self._dataYMatrix = None
+        self._numData = None
+        self._channelNum = None
 
         # fit data is an NxM matrix (N is the number id)
         self._rawData, self._fitData, self._fitMask, self._fitID = None, None, None, None
 
-        self._fitParamHistory, self._fitValueHistory = [], []
-        self._fitErrorHistory = []
-        self._configChosen = []
-        self.mode, self.average = None, 0
-        self._channelChosen = []
+        self._fitParamHistory: List[Any] = []
+        self._fitValueHistory: List[Any] = []
+        self._fitErrorHistory: List[Any] = []
+        self._configChosen: List[Any] = []
+        self.mode = None
+        self.average = 0
+        self._channelChosen: List[Any] = []
 
     def pull_data(self, mode='resonator', **kwargs):
         """
