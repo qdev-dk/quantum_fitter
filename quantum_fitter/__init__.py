@@ -9,6 +9,7 @@ If you want to change any parameters' properties, use ins.set_params() to alter.
 One example:
 ==========================================
 # define a function method
+
 def gaussian(x, amp, cen, wid):
     1-d gaussian: gaussian(x, amp, cen, wid)
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
