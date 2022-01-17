@@ -4,6 +4,14 @@ quantum\_fitter.tests package
 Submodules
 ----------
 
+quantum\_fitter.tests.test\_fit module
+--------------------------------------
+
+.. automodule:: quantum_fitter.tests.test_fit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 quantum\_fitter.tests.test\_installation module
 -----------------------------------------------
 
