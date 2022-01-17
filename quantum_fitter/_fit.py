@@ -20,27 +20,8 @@ class QFit:
         self.wash_status = False
         self._init_guess_y = None
 
-        # using default build-in model in lmfit. If want to do multiple build-in model, just pass in a list of str
-        # Example: model=['LinearModel', 'LorentzianModel']
-        if isinstance(model, str):
-            # Detect if we are using resonator model
-            if model in ['ComplexResonatorModel', 'ResonatorModel']:
-                self._qmodel = getattr(md, model)()
-                self._params = self._qmodel.make_params()
-            else:
-                self._qmodel = getattr(models, model)()
-                self._params = self._qmodel.make_params()
-
-        elif isinstance(model, list) or isinstance(model, set):
-            self._qmodel = getattr(models, model[0])()
-            self._params = self._qmodel.make_params()
-            if len(model) > 1:
-                for m in model[1:]:
-                    self.add_models(m)
-        else:
-            self._qmodel = Model(model)
-            self._params = self._qmodel.make_params()
-
+        self.makemodels(model, params_init)
+        
         # set initial value by using either list (in sequence of params) or dict (with name keys and value items)
         if isinstance(params_init, list):
             for n_params in range(len(params_init)):
@@ -48,11 +29,43 @@ class QFit:
         elif isinstance(params_init, dict):
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
+    
 
         self.x_name = self._qmodel.param_names[0]
         self.weight = None
         self.wash_params = None
 
+    def makemodels(self, model, params_init) -> None:
+        # using default build-in model in lmfit. If want to do multiple build-in model, just pass in a list of str
+        # Example: model=['LinearModel', 'LorentzianModel']
+        if isinstance(model, list) or isinstance(model, set):
+            self._qmodel = self.makemodel(model[0])
+            
+            if len(model) > 1:
+                for i, m in enumerate(model[1:]):
+                    mod = self.makemodel(m)
+                    if m in model:
+                        mod.prefix = f'f{i+2}_'   
+                    self._qmodel += mod
+        else:
+            self._qmodel = self.makemodel(model)
+
+        self._params = self._qmodel.make_params()
+
+    def makemodel(self, model) -> Model:
+        if isinstance(model, str):
+            return self.strtomodel(model)
+        elif isinstance(model, Model):
+            return model
+        elif callable(model):
+            return Model(model)
+
+    def strtomodel(self, model):
+        if model in ['ComplexResonatorModel', 'ResonatorModel']:
+            return getattr(md, model)()
+        else:
+            return getattr(models, model)()
+        
     def __str__(self):
         return 'Lmfit hi'
 
