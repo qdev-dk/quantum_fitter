@@ -38,7 +38,7 @@ class QFit:
     def makemodels(self, model, params_init) -> None:
         # using default build-in model in lmfit. If want to do multiple build-in model, just pass in a list of str
         # Example: model=['LinearModel', 'LorentzianModel']
-        if isinstance(model, list) or isinstance(model, set):
+        if isinstance(model, list):
             self._qmodel = self.makemodel(model[0])
             
             if len(model) > 1:
