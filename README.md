@@ -59,7 +59,7 @@ y_fit = qfit.fit_values()
 
 ## Example ##
 An example of using 'qfit' can be found here: 
-[Example] =(https://qdev-dk.github.io/quantum_fitter/example_notebooks/gaussian_fitting.html)
+[Example](https://qdev-dk.github.io/quantum_fitter/example_notebooks/gaussian_fitting.html)
 
 # Appendix A: The build-in function list
 **Peak-like models**, for more models, [tap here](https://lmfit.github.io/lmfit-py/builtin_models.html).
