@@ -56,77 +56,10 @@ y_fit = qfit.fit_values()
 ```
 
 
-Here is the built-in function example for `qfit`
+
 ## Example ##
-
-```python
-import quantum_fitter as qf
-from numpy import sqrt, pi, exp
-import numpy as np
-import matplotlib.pyplot as plt
-
-x = np.linspace(0, 10, 500)
-y = gaussian(x, 8, 5, 0.6) + np.random.randn(500) + 0.2 * x + 0.1
-
-params_ini = {'intercept': 0,
-              'slope': 0,
-              'amplitude': 5,
-              'center': 5,
-              'sigma': 1}
-
-qfit = qf.QFit(x, y, ['GaussianModel', 'LinearModel'], params_ini)
-qfit.set_params('amp', value=5, minimum=-100, maximum=100)
-
-qfit.do_fit()
-
-              
-plot_settings = {
-    'x_label': 'Time (us)',
-    'y_label': 'Voltage (mV)',
-    'plot_title': 'Maxwell's demon',
-    'y_lim': [0, 8],
-    'fit_color': 'C4',
-    'fig_size': (8, 6),
-}
-
-qfit.pretty_print()
-qfit.pdf_print('./fit_pdf/qfit.pdf')
-plt.show()
-```
-<p align="center">
-<img src="https://github.com/cqed-at-qdev/quantum_fitter/blob/main/_test/qtest.png" width="400" height="300" />
-</p>
-
-Or we can use our own modification function
-
-```python
-def gaussian(x, amp, cen, wid):
-    """1-d gaussian: gaussian(x, amp, cen, wid)"""
-    return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
-
-x = np.linspace(0, 10, 500)
-y = gaussian(x, 8, 5, 0.6) + np.random.randn(500)
-
-params_ini = {'amplitude': 5,
-              'center': 5,
-              'sigma': 1}
-# Alternatively 
-# params_ini = [5, 5, 1]
-
-qfit = qf.QFit(x, y, gaussian, params_ini)
-
-# smooth the spikes
-a.wash()
-
-a.do_fit()
-file_path = os.path.dirname(os.path.realpath(__file__))
-a.pdf_print(file_path, 'qfit_test', plot_settings=plot_set)
-```
-Look into the test file, the template pdf file is there.
-<img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_4996.GIF" width="30" height="30" /> <img src="https://github.com/gaozmm/Playground_gaozm/blob/main/QDev/IMG_5007.GIF" width="30" height="30" />
-
-For more examples, please look into the example directory. 
-
+An example of using 'qfit' can be found here: 
+[Example] =(https://qdev-dk.github.io/quantum_fitter/example_notebooks/gaussian_fitting.html)
 
 # Appendix A: The build-in function list
 **Peak-like models**, for more models, [tap here](https://lmfit.github.io/lmfit-py/builtin_models.html).
@@ -167,6 +100,15 @@ To obtain the parameters in the models, use ```qf.params('GaussianModel')``` to 
 
 [DoniachModel](https://lmfit.github.io/lmfit-py/builtin_models.html#doniachmodel)
 
+## Installation
+
+On a good day, installation is as easy as
+```
+$ git clone https://github.com/qdev-dk/quantum_fitter.git
+$ cd quantum_fitter
+$ pip install .
+```
+
 ## Running the tests
 
 If you have gotten 'quantum_fitter' from source, you may run the tests locally.
@@ -199,5 +141,3 @@ $ conda install pandoc
 else, see [here](https://pandoc.org/installing.html) for pandoc's installation instructions.
 
 Then run `make html` in the `docs` folder. The next time you build the documentation, remember to run `make clean` before you run `make html`.
-
-
