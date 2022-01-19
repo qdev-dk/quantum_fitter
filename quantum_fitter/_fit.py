@@ -327,7 +327,7 @@ class QFit:
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
-        ax1.set_title('Raw S21 Complex Plane', fontdict={'fontsize': 10})
+        ax1.set_title('Raw S21 Complex Plane', fontdict={'size': 10})
         ax1.set_xlabel('Re(S21)')
         ax1.set_ylabel('Im(S21)')
 
@@ -335,14 +335,14 @@ class QFit:
         ax2.scatter(self._datax, 20*np.log10(np.abs(self._raw_y)), c='grey', s=1)
         ax2.scatter(self._datax[np.argmin(20*np.log10(np.abs(self._raw_y)))], np.min(20*np.log10(np.abs(self._raw_y)))
                     , c='b', s=5)
-        ax2.set_title('S21 Mag', fontdict={'fontsize': 10})
+        ax2.set_title('S21 Mag', fontdict={'size': 10})
         ax2.set_xlabel('Frequency / GHz')
         ax2.set_ylabel('S21(dB)')
         ax2.ticklabel_format(useOffset=False)
 
         ax3.plot(self._datax, np.angle(self._fity*angle), 'r', label='best fit', linewidth=1.5)
         ax3.scatter(self._datax, np.angle(self._raw_y*angle), c='grey', s=1)
-        ax3.set_title('S21 Phase', fontdict={'fontsize': 10})
+        ax3.set_title('S21 Phase', fontdict={'size': 10})
         ax3.set_xlabel('Frequency / GHz')
         ax3.set_ylabel('Angle / rad')
         ax3.ticklabel_format(useOffset=False)
@@ -363,7 +363,7 @@ class QFit:
         if id:
             fit_info += '    ' + 'id= ' + str(id)
 
-        fig.suptitle(suptitle+'\n'+fit_info, fontdict={'fontsize': 10})
+        fig.suptitle(suptitle+'\n'+fit_info, fontdict={'size': 10})
 
 
         if plot_settings.get('plot_guess', None) is not None:
