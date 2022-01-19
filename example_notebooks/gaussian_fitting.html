@@ -21,6 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Labber examples" href="labber_example.html" />
     <link rel="prev" title="Examples of using quantum_fitter" href="index.html" /> 
 </head>
 
@@ -50,6 +51,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#Appendix-A:-The-build-in-function-list">Appendix A: The build-in function list</a></li>
+<li class="toctree-l3"><a class="reference internal" href="labber_example.html">Labber examples</a></li>
 </ul>
 </li>
 </ul>
@@ -418,7 +420,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-<h2> Model</h2> Model(gaussian) <h2>Fit Statistics</h2><table><tr><td>fitting method</td><td>least_squares</td><td></td></tr><tr><td># function evals</td><td>8</td><td></td></tr><tr><td># data points</td><td>500</td><td></td></tr><tr><td># variables</td><td>3</td><td></td></tr><tr><td>chi-square</td><td> 123.451690</td><td></td></tr><tr><td>reduced chi-square</td><td> 0.24839374</td><td></td></tr><tr><td>Akaike info crit.</td><td>-693.379097</td><td></td></tr><tr><td>Bayesian info crit.</td><td>-680.735272</td><td></td></tr></table><h2>Variables</h2><table><tr><th> name </th><th> value </th><th> standard error </th><th> relative error </th><th> initial value </th><th> min </th><th> max </th><th> vary </th><th> expression </th></tr><tr><td> amplitude </td><td>  8.01907961 </td><td>  0.12410676 </td><td> (1.55%) </td><td> 5 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> center </td><td>  4.99075138 </td><td>  0.01039908 </td><td> (0.21%) </td><td> 5 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> sigma </td><td>  0.58190830 </td><td>  0.01039908 </td><td> (1.79%) </td><td> 1 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> fwhm </td><td>  1.37028929 </td><td>  0.02448796 </td><td> (1.79%) </td><td> 2.35482 </td><td>        -inf </td><td>         inf </td><td> False </td><td> 2.3548200*sigma </td></tr><tr><td> height </td><td>  5.49768767 </td><td>  0.08508460 </td><td> (1.55%) </td><td> 1.9947115000000002 </td><td>        -inf </td><td>         inf </td><td> False </td><td> 0.3989423*amplitude/max(1e-15, sigma) </td></tr></table><h2>Correlations (unreported correlations are < 0.100)</h2><table><tr><td>amplitude</td><td>sigma</td><td>0.5774</td></tr></table></div>
+<h2> Model</h2> Model(gaussian) <h2>Fit Statistics</h2><table><tr><td>fitting method</td><td>least_squares</td><td></td></tr><tr><td># function evals</td><td>8</td><td></td></tr><tr><td># data points</td><td>500</td><td></td></tr><tr><td># variables</td><td>3</td><td></td></tr><tr><td>chi-square</td><td> 124.614337</td><td></td></tr><tr><td>reduced chi-square</td><td> 0.25073307</td><td></td></tr><tr><td>Akaike info crit.</td><td>-688.692216</td><td></td></tr><tr><td>Bayesian info crit.</td><td>-676.048391</td><td></td></tr></table><h2>Variables</h2><table><tr><th> name </th><th> value </th><th> standard error </th><th> relative error </th><th> initial value </th><th> min </th><th> max </th><th> vary </th><th> expression </th></tr><tr><td> amplitude </td><td>  7.94495776 </td><td>  0.12777798 </td><td> (1.61%) </td><td> 5 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> center </td><td>  4.97649272 </td><td>  0.01134850 </td><td> (0.23%) </td><td> 5 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> sigma </td><td>  0.61108938 </td><td>  0.01134850 </td><td> (1.86%) </td><td> 1 </td><td>        -inf </td><td>         inf </td><td> True </td><td>  </td></tr><tr><td> fwhm </td><td>  1.43900549 </td><td>  0.02672368 </td><td> (1.86%) </td><td> 2.35482 </td><td>        -inf </td><td>         inf </td><td> False </td><td> 2.3548200*sigma </td></tr><tr><td> height </td><td>  5.18676946 </td><td>  0.08341830 </td><td> (1.61%) </td><td> 1.9947115000000002 </td><td>        -inf </td><td>         inf </td><td> False </td><td> 0.3989423*amplitude/max(1e-15, sigma) </td></tr></table><h2>Correlations (unreported correlations are < 0.100)</h2><table><tr><td>amplitude</td><td>sigma</td><td>0.5774</td></tr></table></div>
 </div>
 <p>Finally we can plot the result</p>
 <div class="nbinput docutils container">
@@ -444,7 +446,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>To print the resulting plot to a pdf, use <code class="docutils literal notranslate"><span class="pre">pdf_print</span></code>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#qfit.pdf_print(&#39;qfit.pdf&#39;)</span>
@@ -455,7 +457,7 @@ div.rendered_html tbody tr:hover {
 <h4>Two models on top of each other<a class="headerlink" href="#Two-models-on-top-of-each-other" title="Permalink to this headline">¶</a></h4>
 <p>We add a linear term to the gausian data.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">x</span>
@@ -463,7 +465,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">params_ini</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -477,33 +479,16 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/opt/hostedtoolcache/Python/3.7.12/x64/lib/python3.7/site-packages/lmfit/lineshapes.py:493: RuntimeWarning: invalid value encountered in multiply
-  return slope * x + intercept
-/opt/hostedtoolcache/Python/3.7.12/x64/lib/python3.7/site-packages/scipy/optimize/_lsq/common.py:423: RuntimeWarning: invalid value encountered in subtract
-  lower_dist = x - lb
-/opt/hostedtoolcache/Python/3.7.12/x64/lib/python3.7/site-packages/scipy/optimize/_numdiff.py:556: RuntimeWarning: invalid value encountered in double_scalars
-  dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
-/opt/hostedtoolcache/Python/3.7.12/x64/lib/python3.7/site-packages/lmfit/minimizer.py:375: RuntimeWarning: invalid value encountered in double_scalars
-  _neg2_log_likel = self.ndata * np.log(self.chisqr / self.ndata)
-/opt/hostedtoolcache/Python/3.7.12/x64/lib/python3.7/site-packages/lmfit/minimizer.py:377: RuntimeWarning: divide by zero encountered in log
-  self.bic = _neg2_log_likel + np.log(self.ndata) * self.nvarys
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/example_notebooks_gaussian_fitting_18_1.png" src="../_images/example_notebooks_gaussian_fitting_18_1.png" />
+<img alt="../_images/example_notebooks_gaussian_fitting_18_0.png" src="../_images/example_notebooks_gaussian_fitting_18_0.png" />
 </div>
 </div>
 <p>To get the fit parameters’ results, we can use qfit.fit_params, qfit.err_params. The method qfit.fit_values returns the y-data from the fit.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f_p</span> <span class="o">=</span> <span class="n">qfit</span><span class="o">.</span><span class="n">fit_params</span><span class="p">()</span> <span class="c1"># return dictionary with all the fitting parameters</span>
@@ -513,7 +498,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qfit</span><span class="o">.</span><span class="n">params</span>
@@ -525,11 +510,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;amplitude&#39;: 5, &#39;center&#39;: 5, &#39;sigma&#39;: 1, &#39;f2_slope&#39;: -inf, &#39;f2_intercept&#39;: -inf, &#39;fwhm&#39;: 2.35482, &#39;height&#39;: 1.9947115000000002, &#39;intercept&#39;: 0, &#39;slope&#39;: 0.5}
+{&#39;amplitude&#39;: 5, &#39;center&#39;: 5, &#39;sigma&#39;: 1, &#39;fwhm&#39;: 2.35482, &#39;height&#39;: 1.9947115000000002, &#39;slope&#39;: 0.5, &#39;intercept&#39;: 0}
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -537,12 +522,10 @@ div.rendered_html tbody tr:hover {
 {&#39;amplitude&#39;: 5,
  &#39;center&#39;: 5,
  &#39;sigma&#39;: 1,
- &#39;f2_slope&#39;: -inf,
- &#39;f2_intercept&#39;: -inf,
  &#39;fwhm&#39;: 2.35482,
  &#39;height&#39;: 1.9947115000000002,
- &#39;intercept&#39;: 0,
- &#39;slope&#39;: 0.5}
+ &#39;slope&#39;: 0.5,
+ &#39;intercept&#39;: 0}
 </pre></div></div>
 </div>
 </section>
@@ -551,7 +534,7 @@ div.rendered_html tbody tr:hover {
 <section id="Or-we-can-use-our-own-modification-function">
 <h2>Or we can use our own modification function<a class="headerlink" href="#Or-we-can-use-our-own-modification-function" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y2</span> <span class="o">=</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">)</span> <span class="o">+</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">7.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span><span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>
@@ -559,7 +542,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">double_gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">cen_1</span><span class="p">,</span> <span class="n">cen_2</span><span class="p">,</span> <span class="n">wid</span><span class="p">):</span>
@@ -568,7 +551,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">params_ini</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;amplitude&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
@@ -592,7 +575,7 @@ div.rendered_html tbody tr:hover {
 <h2>smooth the data<a class="headerlink" href="#smooth-the-data" title="Permalink to this headline">¶</a></h2>
 <p>If need to smooth the data beforehand, use <code class="docutils literal notranslate"><span class="pre">qfit.wash()</span></code> to <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/signal.html">filter the spikes</a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qfit</span><span class="o">.</span><span class="n">wash</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;savgol&#39;</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">polyorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -600,7 +583,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qfit</span><span class="o">.</span><span class="n">do_fit</span><span class="p">()</span>
@@ -645,6 +628,7 @@ div.rendered_html tbody tr:hover {
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Examples of using quantum_fitter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="labber_example.html" class="btn btn-neutral float-right" title="Labber examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
