@@ -51,11 +51,12 @@ class LabberData:
                 t_x, t_y = self.mask_data(**kwargs)
                 return t_x, t_y
 
-        if mode == 'rabi':
+        if mode == 'T1':
             self.mode = mode
             self._dataXMatrix = self.h5data['Data']['Data'][:, 0, :].flatten()
-            self._dataXMatrix *= 1e3
+            self._dataXMatrix *= 1e6
             self._dataYMatrix = self.h5data['Data']['Data'][:, 2, :].flatten()
+            self._dataXMatrix *= 1e6
             # self._dataYMatrix = self._dataYMatrix - self._dataYMatrix[-1]
 
             return self._dataXMatrix, self._dataYMatrix
@@ -167,15 +168,15 @@ class LabberData:
 
             return t_n
 
-        if self.mode == 'rabi':
+        if self.mode == 'T1':
             t2 = qf.QFit(self._dataXMatrix, self._dataYMatrix, model='ExponentialModel')
             t2.add_models('LinearModel')
-            t2.set_params('decay', 0.1)
+            t2.set_params('decay', 10)
             t2.do_fit(verbose=verbose)
             t2.pretty_print(plot_settings = {
-                'x_label': 'Sequence duration (ms)',
-                'y_label': 'Phase',
-                'plot_title': 'Datasource',
+                'x_label': 'Sequence duration (us)',
+                'y_label': 'Voltage (uV)',
+                'plot_title': self._filePath,
                 'fit_color': 'C4',
                 'fig_size': (8, 6),
             })

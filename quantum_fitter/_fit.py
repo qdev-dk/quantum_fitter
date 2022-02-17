@@ -21,7 +21,7 @@ class QFit:
         self._init_guess_y = None
 
         self.makemodels(model, params_init)
-        
+
         # set initial value by using either list (in sequence of params) or dict (with name keys and value items)
         if isinstance(params_init, list):
             for n_params in range(len(params_init)):
@@ -29,7 +29,7 @@ class QFit:
         elif isinstance(params_init, dict):
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
-    
+
 
         self.x_name = self._qmodel.param_names[0]
         self.weight = None
@@ -40,12 +40,12 @@ class QFit:
         # Example: model=['LinearModel', 'LorentzianModel']
         if isinstance(model, list):
             self._qmodel = self.makemodel(model[0])
-            
+
             if len(model) > 1:
                 for i, m in enumerate(model[1:]):
                     mod = self.makemodel(m)
                     if m in model:
-                        mod.prefix = f'f{i+2}_'   
+                        mod.prefix = f'f{i+2}_'
                     self._qmodel += mod
         else:
             self._qmodel = self.makemodel(model)
@@ -65,7 +65,7 @@ class QFit:
             return getattr(md, model)()
         else:
             return getattr(models, model)()
-        
+
     def __str__(self):
         return 'Lmfit hi'
 
@@ -274,6 +274,13 @@ class QFit:
     def cov_mat(self):
         return self.result.covar
 
+    def complex_comp(self):
+        _window = len(self._datax)
+        phase = np.unwrap(np.angle(self._raw_y))
+        line_fit = np.polyfit([np.mean(self._datax[:_window]), np.mean(self._datax[-_window:])],
+                              [np.mean(phase[:_window]), np.mean(phase[-_window:])], 1)
+        return line_fit[0]
+
     def plot_cov_mat(self):
         f = plt.figure(figsize=(8, 6))
         _cov_mat = self.cov_mat()
@@ -323,29 +330,36 @@ class QFit:
             return self._fig, ax
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
-        angle = np.exp(-1j*np.angle(self._fity[0]))
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
+        angle = np.exp(-1j*(self._datax*self.result.params['phi1']+self.result.params['phi2']))
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(10, 3))
         ax1.plot(self._fity.real, self._fity.imag, 'r', label='best fit', linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c='grey', s=1)
         ax1.set_title('Raw S21 Complex Plane', fontdict={'size': 10})
         ax1.set_xlabel('Re(S21)')
         ax1.set_ylabel('Im(S21)')
 
-        ax2.plot(self._datax, 20*np.log10(np.abs(self._fity)), 'r', label='best fit', linewidth=1.5)
-        ax2.scatter(self._datax, 20*np.log10(np.abs(self._raw_y)), c='grey', s=1)
-        ax2.scatter(self._datax[np.argmin(20*np.log10(np.abs(self._raw_y)))], np.min(20*np.log10(np.abs(self._raw_y)))
-                    , c='b', s=5)
-        ax2.set_title('S21 Mag', fontdict={'size': 10})
-        ax2.set_xlabel('Frequency / GHz')
-        ax2.set_ylabel('S21(dB)')
-        ax2.ticklabel_format(useOffset=False)
+        ax2.plot((self._fity * angle).real, (self._fity * angle).imag, 'r', label='best fit', linewidth=1.5)
+        ax2.scatter((self._raw_y * angle).real,
+                    (self._raw_y * angle).imag, c='grey', s=1)
+        ax2.set_title('Raw S21 Complex Plane', fontdict={'fontsize': 10})
+        ax2.set_xlabel('Re(S21)')
+        ax2.set_ylabel('Im(S21)')
 
-        ax3.plot(self._datax, np.angle(self._fity*angle), 'r', label='best fit', linewidth=1.5)
-        ax3.scatter(self._datax, np.angle(self._raw_y*angle), c='grey', s=1)
-        ax3.set_title('S21 Phase', fontdict={'size': 10})
+        ax3.plot(self._datax, 20*np.log10(np.abs(self._fity)), 'r', label='best fit', linewidth=1.5)
+        ax3.scatter(self._datax, 20*np.log10(np.abs(self._raw_y)), c='grey', s=1)
+        ax3.scatter(self._datax[np.argmin(20*np.log10(np.abs(self._raw_y)))], np.min(20*np.log10(np.abs(self._raw_y)))
+                    , c='b', s=5)
+        ax3.set_title('S21 Mag', fontdict={'fontsize': 10})
         ax3.set_xlabel('Frequency / GHz')
-        ax3.set_ylabel('Angle / rad')
+        ax3.set_ylabel('S21(dB)')
         ax3.ticklabel_format(useOffset=False)
+
+        ax4.plot(self._datax, np.angle(self._fity*angle), 'r', label='best fit', linewidth=1.5)
+        ax4.scatter(self._datax, np.angle(self._raw_y*angle), c='grey', s=1)
+        ax4.set_title('S21 Phase', fontdict={'fontsize': 10})
+        ax4.set_xlabel('Frequency / GHz')
+        ax4.set_ylabel('Angle / rad')
+        ax4.ticklabel_format(useOffset=False)
 
         # if self._qmodel.name == 'ResonatorModel':
         fit_info = '$Q_{int}= $'+str("{0:.1f}".format(self.fit_params('Qi')*1e3))+'    '
@@ -363,12 +377,12 @@ class QFit:
         if id:
             fit_info += '    ' + 'id= ' + str(id)
 
-        fig.suptitle(suptitle+'\n'+fit_info, fontdict={'size': 10})
+        fig.suptitle(suptitle+'\n'+fit_info, fontdict={'fontsize': 10})
 
 
         if plot_settings.get('plot_guess', None) is not None:
             ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, '--', label='inital fit', c='#d1d1e0')
-            ax2.plot(self._datax, 20*np.log10(np.abs(self._init_guess_y)), '--', label='inital fit', c='#d1d1e0')
+            ax3.plot(self._datax, 20*np.log10(np.abs(self._init_guess_y)), '--', label='inital fit', c='#d1d1e0')
 
         fig.tight_layout()
 

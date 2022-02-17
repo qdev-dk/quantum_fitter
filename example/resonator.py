@@ -16,8 +16,8 @@ import sys
 
 #=======================================
 # Else data read from .dat file
-p = -30.5
-freq, S21 = qfit.read_dat('../_resonator/mid011.dat', power=p)
+p = -31
+freq, S21 = qfit.read_dat('C:/Users/Gao_z/Downloads/rs_vna_S21_power_set_S21_frequency_set.dat', power=p)
 
 #=======================================
 # Better to move the center of frequency to 0
@@ -46,7 +46,7 @@ t5.guess()
 t5.do_fit(verbose=1)
 print(t5.err_params('Qi'))
 # Plot the data
-t5.polar_plot(power=p,plot_settings={'plot_guess': 0})
+t5.polar_plot(power=p)
 
 # t5.plot_cov_mat()
 plt.show()

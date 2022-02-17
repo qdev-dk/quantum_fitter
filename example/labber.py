@@ -20,8 +20,9 @@ t5 = qf.LabberData(filePath=path)
 # method with 'lc', 'aw', 'lcaw' or None
 t5.pull_data(frequency=6.4972218e9, power=[-28])
 t5.fit_data(model='ResonatorModel', method='lc', resonator_plot=True, window=0.05, sigma=0.15, verbose=1)
+print(t5)
 # t5.fit_data(model='ResonatorModel', resonator_plot=True, window=0.06, sigma=0.5, verbose=1)
-plt.show()
+# plt.show()
 
 
 
