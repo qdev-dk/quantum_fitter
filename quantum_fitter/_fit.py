@@ -10,6 +10,7 @@ class QFit:
         self._raw_y = data_y.flatten()
         # data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
+        self._fitx = None
         self._datay, self._fity = data_y, None
         # define the history of y, use for pdf or plots
         if self._datay is not None:
@@ -97,6 +98,18 @@ class QFit:
     @data_y.setter
     def data_y(self, data_y):
         self._datay = data_y
+        
+    @property
+    def fit_y(self):
+        if not self._fity:
+            print('No data y now!')
+            return
+        return self._fity
+    
+    @fit_y.setter
+    def fit_y(self, fit_y):
+        print('here')
+        self._fity = fit_y
 
     def make_params(self, **kwargs):
         return self._qmodel.make_params(**kwargs)
@@ -190,7 +203,7 @@ class QFit:
     def do_fit(self, verbose=None):
         self.result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method, weights=self.weight
                                        , nan_policy='omit')
-        # self._params = self.result.params
+        self._params = self.result.params
         if verbose:
             print(self.result.fit_report())
         self._fity = self.result.best_fit
@@ -294,10 +307,17 @@ class QFit:
         cb.ax.tick_params(labelsize=10)
         plt.title('Correlation Matrix', fontsize=11)
 
-    def pretty_print(self, plot_settings=None):
+    def pretty_print(self, plot_settings=None, x=None):
         '''Basic function for plotting the result of a fit'''
-        fit_params, error_params, fit_value = self.result.best_values, self._params_stderr(), \
-                                              self.result.best_fit.flatten()
+        if x is not None:
+            if x == 0:
+                self._fitx = np.linspace(min(self._datax), max(self._datax), 100)
+            else:
+                self._fitx = x
+            fit_value = self.eval(x=self._fitx)
+        else:
+            fit_value = self.fit_y
+        fit_params, error_params = self.result.best_values, self._params_stderr()
         _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
         self._fig, ax = plt.subplots(1, 1, figsize=_fig_size)
         # Add the original data
@@ -305,11 +325,12 @@ class QFit:
         ax.plot(self._datax, self._datay, '.', label='Data', color=data_color, markersize=10, zorder=10)
         fit_color = 'gray' if plot_settings is None else plot_settings.get('fit_color', 'k')
         # Add fitting curve:
-        ax.plot(self._datax, fit_value, '-', linewidth=1, label='Fit', color=fit_color)
-        ax.plot(self._datax, fit_value, 'o', markersize=3, color=fit_color)
+        ax.plot(self._fitx, fit_value, '-', linewidth=1, label='Fit', color=fit_color)
+        if x is None:
+            ax.plot(self._fitx, fit_value, 'o', markersize=3, color=fit_color)
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
-            ax.plot(self._datax[0], fit_value[0], 'o', markersize=0,
+            ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
                     label='{}: {:4.4}±{:4.4}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
         # Rescale plot if user wants it:
         if plot_settings is not None:

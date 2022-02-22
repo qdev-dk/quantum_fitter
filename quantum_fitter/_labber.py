@@ -170,7 +170,7 @@ class LabberData:
 
         if self.mode == 'T1':
             t2 = qf.QFit(self._dataXMatrix, self._dataYMatrix, model='ExponentialModel')
-            t2.add_models('LinearModel')
+            t2.add_models('ConstantModel')
             t2.set_params('decay', 10)
             t2.do_fit(verbose=verbose)
             t2.pretty_print(plot_settings = {
