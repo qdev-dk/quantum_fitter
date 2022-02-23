@@ -7,6 +7,8 @@ Subpackages
 .. toctree::
    :maxdepth: 10
 
+   quantum_fitter.readout_tools
+   quantum_fitter.standard_operating_functions
    quantum_fitter.tests
 
 Submodules

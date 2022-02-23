@@ -1,0 +1,10 @@
+quantum\_fitter.standard\_operating\_functions package
+======================================================
+
+Module contents
+---------------
+
+.. automodule:: quantum_fitter.standard_operating_functions
+   :members:
+   :undoc-members:
+   :show-inheritance:
