@@ -310,7 +310,7 @@ class QFit:
     def pretty_print(self, plot_settings=None, x=None):
         '''Basic function for plotting the result of a fit'''
         if x is not None:
-            if x == 0:
+            if isinstance(x, int):
                 self._fitx = np.linspace(min(self._datax), max(self._datax), 100)
             else:
                 self._fitx = x
@@ -340,9 +340,11 @@ class QFit:
                 ax.set_xlim(plot_settings['x_lim'])
             if 'y_lim' in plot_settings.keys():
                 ax.set_ylim(plot_settings['y_lim'])
+            
         ax.legend()
         title = 'Data source not given' if plot_settings is None else plot_settings.get('plot_title', 'no name given')
-        ax.set_title('Datasource: ' + title + '\n Fit type: ' + str(self._qmodel.name))
+        fit_type = plot_settings.fit_type if plot_settings is None else plot_settings.get('fit_type', str(self._qmodel.name))
+        ax.set_title('Datasource: ' + title + '\n Fit type: ' + fit_type)
         # Check if use wants figure and return if needed:
         if plot_settings is None or plot_settings.get('show_fig', None) is None:
             plt.show()
@@ -535,3 +537,244 @@ def str_none_if_none(stderr):
         return 'None'
     else:
         return stderr
+
+
+
+
+
+
+
+
+  
+def oddfun_damped_oscillations_guess(x, y):
+    # Adapted from QDev wrappers, `qdev_fitter`
+    from scipy import fftpack
+    a = y.max() - y.min()
+    c = y.mean()
+    T = x[round(len(x)/2)]
+    yhat = fftpack.rfft(y-y.mean())
+    idx = (yhat**2).argmax()
+    freqs = fftpack.rfftfreq(len(x), d = (x[1]-x[0])/(2*np.pi))
+    w = freqs[idx]
+    p = 0
+
+    return [a, T, w, p, c]
+
+def oddfun_damped_oscillations(x, A, T, omega, phi, c):
+    # E.g. for fitting Rabis
+    return (A * np.sin(omega * x + phi) * np.exp(-x/T) + c)
+    
+def exp_func(x, A, T, c):
+    return (A * np.exp(-x/T) + c)
+
+def weighted_mean(data, errors):
+    from scipy import stats
+    import numpy.ma as ma
+    import numpy as np
+    
+    """Calculates weighted mean of data areay with errors.
+
+    Args:
+        data (array): Array of data, shape = [N,1]
+        errors (array): Array of errors for data, shape = [N,1]
+
+    Returns:
+        mean_weighted (float): Number of the weighted mean
+        err_weighted (float): Number of the weighted error
+        Chi2 (float): Chi2 of the arrays
+        Chi2_prob (float): Chi2 Probability of the array
+    """
+    
+    weight = 0
+    for i in errors:
+        if i == 0:
+            weight = 1
+        else:
+            if i == None:
+                weight += 0
+            else:
+                weight += (1/i)**2
+
+    mean_weighted = 0
+    for i in range(len(data)):
+        mean_weighted += (float(data[i])*(1/float(errors[i]))**2)/weight
+
+    err_weighted = np.sqrt(1/weight)
+    
+    Chi2 = np.sum(((np.array(data)-mean_weighted)/np.array(errors))**2)
+    Chi2_prob = stats.chi2.sf(Chi2, len(data)-1)
+        
+    return mean_weighted, err_weighted, Chi2, Chi2_prob
+
+def avg_plot(path, mode='T1', figsize=(8, 6), mask=False):
+    """This function takes the average of entries in the dataset and plots them.
+
+    Args:
+        path (string)): datafile path as a string
+        mode (str, optional): The fitting mode. Can also be 'T2'. Defaults to 'T1'.
+        figsize (tuple, optional): Size of the plt. Defaults to (8, 6).
+        mask (bool, optional): The range of datapoints to remove. If False all datapoints are used. Defaults to False.
+    """
+    import Labber as lab
+    import quantum_fitter as qf
+    import quantum_fitter.standard_operating_functions as sof
+    
+    file = lab.LogFile(path)
+    filename =  qf.get_file_name_from_path(path)
+    
+    X, y_arr = file.getTraceXY(entry = 0)
+    for i in range(file.getNumberOfEntries()-1):
+        _, yi = file.getTraceXY(entry = i+1)
+        y_arr = np.vstack([y_arr, yi])
+
+    y_avg = np.mean(y_arr, axis=0)
+
+    X *= 1e6
+    y_avg *= 1e6
+
+    angle = sof.calcRotationAngle(y_avg) #find angle in radians to rotate data by
+    y = np.real(np.exp(1j*angle)*y_avg)
+  
+
+    if mask != False:
+        mask_ = (X < mask[0]) | (X > mask[1])
+        X = X[mask_]
+        y = y[mask_]
+
+    if mode == 'T1':
+        fit_type = r'$A \times exp(-x/T) + c$'
+        
+        t2 = qf.QFit(X, y, model=Model(exp_func))
+        t2.set_params('T', 100)
+        t2.set_params('A', 100)
+        t2.set_params('c', 100)
+        
+    if mode == 'T2':
+        fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
+           
+        a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
+        
+        # fitting
+        t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
+        t2.set_params('T', T)
+        t2.set_params('A', a)
+        t2.set_params('c', c)
+        t2.set_params('omega', w)
+        t2.set_params('phi', p)
+    
+    t2.do_fit()
+    
+    t2.pretty_print(plot_settings = {
+        'x_label': 'Sequence duration (\u03BCs)',
+        'y_label': r'$V_{H}$' ' (\u03BCV)',
+        'plot_title': f'{filename}, Averaged',
+        'fit_type': fit_type,
+        'fit_color': 'C4',
+        'fig_size': figsize,
+    }, x=0)
+
+def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figsize=(8, 6), mask=False):
+    """Take a dataset and cal the decay (T1 or T2). Returns a plot of the decays.
+
+    Args:
+        path (str): The datafile path
+        plot_i (list, optional): The number of subplots you want to plot. Defaults to [].
+        mode (str, optional): Can be 'T1' or 'T2'. Defaults to 'T1'.
+        plot_mean (bool, optional): Plots mean and error, if True. Defaults to True.
+        test_time (_type_, optional): Plots one a timescale if True. Defaults to None.
+        figsize (tuple, optional): The size of the plot. Defaults to (8, 6).
+        mask (bool, optional): The range of datapoints to remove. If False all datapoints are used. Defaults to False.
+    """
+    import quantum_fitter as qf
+    import Labber as lab
+    import quantum_fitter.standard_operating_functions as sof
+    
+    file = lab.LogFile(path)
+    filename =  qf.get_file_name_from_path(path)
+    
+    if plot_i == False:
+        plot_i = []
+    
+    rep, t2_array, t2_error, time_array = [], [], [], []
+    entry_0 = file.getEntry(entry=0)['timestamp']/60
+    
+    for i in range(file.getNumberOfEntries()):
+        X, y = file.getTraceXY(entry = i)
+        
+        entry = file.getEntry(entry=i)
+        time_i = entry['timestamp']/60 - entry_0
+        time_array.append(time_i)
+  
+        # rescaling units
+        X *= 1e6
+        y *= 1e6
+        
+        angle = sof.calcRotationAngle(y) #find angle in radians to rotate data by
+        y = np.real(np.exp(1j*angle)*y)
+         
+        if mask != False:
+            mask_ = (X < mask[0]) | (X > mask[1])
+            X = X[mask_]
+            y = y[mask_]
+             
+        if mode == 'T1':
+            fit_type = r'$A \times exp(-x/T) + c}$'
+            
+            t2 = qf.QFit(X, y, model=Model(exp_func))
+            t2.set_params('T', 100)
+            t2.set_params('A', 100)
+            t2.set_params('c', 100)
+            
+        if mode == 'T2':
+            fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
+           
+            a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
+            
+            # fitting
+            t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
+            t2.set_params('T', T)
+            t2.set_params('A', a)
+            t2.set_params('c', c)
+            t2.set_params('omega', w)
+            t2.set_params('phi', p)
+        
+        t2.do_fit()
+        
+        # plotting i entry
+        if plot_i == True or i in plot_i:
+            t2.pretty_print(plot_settings = {
+                'x_label': 'Sequence duration (\u03BCs)',
+                'y_label': r'$V_{H}$' ' (\u03BCV)',
+                'plot_title': f'{filename}, Repetition: {i}',
+                'fit_type': fit_type,
+                'fit_color': 'C4',
+                'fig_size': figsize,
+            }, x=0)
+                
+        t2_error.append(t2.err_params('T'))
+        t2_array.append(t2.fit_params('T'))
+        rep.append(i+1)
+    
+    mean, error, chi2, chi2_prob = weighted_mean(t2_array,t2_error)
+    #print(mean,'\u00B1', error)
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_xlabel("Repetitions"), ax.set_ylabel(f"{mode} decay (\u03BCs)")
+
+    # plot final
+    if test_time != None:
+        rep = time_array
+        ax.set_xlabel("Time (min)")
+    
+    plt.errorbar(rep, t2_array, t2_error, fmt='.', color = 'red', ecolor = 'grey')
+    
+    if plot_mean == True:
+        plt.axhline(y=mean, color='r', linestyle='-', label=f'weighted mean: {mean:.3} \u00B1 {error:.2}')
+        plt.axhline(y=mean+error, color='grey', linestyle='--')
+        plt.axhline(y=mean-error, color='grey', linestyle='--')
+        
+    plt.legend()
+    plt.title(f'{filename}\nFit type: {fit_type}')
+    #plt.tight_layout()
+    plt.show()
+
