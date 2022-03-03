@@ -1,4 +1,4 @@
-import quantum_fitter.readout_tools as rdt
+"""import quantum_fitter.readout_tools as rdt
 import os
 
 # Set up path
@@ -20,4 +20,4 @@ filePath = 'example_data/ss_q1_rabi_v_ampl_5_fine.pickle'
 rd_test2 = rdt.import_classifier(filePath)
 
 # Testing
-rd_test2.plot_classifier()
+rd_test2.plot_classifier()"""

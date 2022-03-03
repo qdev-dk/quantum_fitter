@@ -1,4 +1,4 @@
-import quantum_fitter.readout_tools as rdt
+"""import quantum_fitter.readout_tools as rdt
 import os
 
 # Set up path
@@ -19,3 +19,4 @@ for kernel in ['rbf', 'sigmoid', 'linear', 'poly']:
     
 rd.plot_oscillation(size=2000, mode='expectation') # plots expectation values for all classifiers
 rd.plot_oscillation(size=2000) # plots probability values for all classifiers
+"""
