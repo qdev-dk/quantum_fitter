@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn import svm
-from quantum_fitter.readout_tools import *
+from .plotting import *
 from qutip import *
 from qutip.qip.operations import *
 import matplotlib as mpl
@@ -12,7 +10,7 @@ class Readout(Plotting):
     """
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6), 
-                 alpha=0.7):
+                 alpha=0.7, data=None):
         """Initializes the class and sits figure size an alpha val.
 
         Args:
@@ -30,7 +28,7 @@ class Readout(Plotting):
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         """
         super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, 
-                         cv_params, verbose, kfolds, figsize, alpha)
+                         cv_params, verbose, kfolds, figsize, alpha, data)
         
     def cal_expectation_values(self, X=None, size=None, state=1):
         """A function to calculate the expectation values.
@@ -52,10 +50,10 @@ class Readout(Plotting):
            
         def avg_function(self, Xi, state):
             predcition = self.cv_search.predict(Xi)
-            n_states =  np.unique(predcition).size
+            n_states =  len(self._states_labels)
             
             prob_list = []
-            for i, state_i in enumerate(np.unique(predcition)):
+            for i, state_i in enumerate(self._states_labels):
                 if state_i == state:
                     i_state = i
                     
@@ -68,7 +66,7 @@ class Readout(Plotting):
             if n_states == 3:
                 prob_list_temp[1] /= 2
                 prob_list_temp.insert(1, prob_list_temp[1])
-                
+            
             exp_list = np.dot(prob_list_temp, inv_hadamard(n_states-1))[-1].real
             
             if state == 'all':
@@ -121,12 +119,12 @@ class Readout(Plotting):
         
         try:
             try:
-                predict = print(self.cv_search.predict(data))
+                predict = self.cv_search.predict(data)
             except:
-                predict = print(self.predict([data]))
+                predict = self.predict([data])
         except:
             try:
-                predict = print(self.cv_search.predict(self._reformate(data)))
+                predict = self.cv_search.predict(self._reformate(data))
             except:
                 print('Something went wrong. Data may be in wrong format. Make sure data is in format: [[I1,Q1],[I2, Q2]]')
         
@@ -154,13 +152,34 @@ class Readout(Plotting):
             tail (string): filename 
         """
         import os
-        head, tail = os.path.split(path)
-        
-        if part == 'head':
-            return head
-        else:
-            return tail
+        try:
+            head, tail = os.path.split(path)
+            
+            if part == 'head':
+                return head
+            else:
+                return tail
+        except:
+            #print('No filepath fund. Please make a title manually.')
+            return ''
     
     
+    def _reformate(self, X):
+        """A function that reformates data if not in the right format. The wanted format is [[i,q],[i,q], ...]
+        """ 
+        h5data_reformated = []
+        for i in range(len(X)):
+            h5data_reformated.append(np.column_stack((X[i].real, X[i].imag)))
+        return np.array(h5data_reformated)
+
+
+ 
+def reformate(X):
+    """A function that reformates data if not in the right format. The wanted format is [[i,q],[i,q], ...]
+    """ 
+    h5data_reformated = []
+    for i in range(len(X)):
+        h5data_reformated.append(np.column_stack((X[i].real, X[i].imag)))
+    return np.array(h5data_reformated)
 
 

@@ -14,7 +14,46 @@ The main focus of this package is support vector machines (SVM), but it is equal
 ## How to use the package
 Underneath are some of the main functionality highlighted in symbol examples.
 
-### Example One - setup
+### Example One - Arrays
+To begin using the module get your groundstate and excited state QI vectors and Make sure they are in the right formate ([[i,q],[i,q],...]. 
+The formating can be done by using the rdt.reformate function.
+
+```python
+import quantum_fitter.readout_tools as rdt
+import Labber as lab
+import os
+
+# Data setup
+dir = os.path.dirname(__file__)
+file_path = os.path.join(dir, 'example_data/ss_q1_rabi_v_ampl_5_fine.hdf5')
+
+file = lab.LogFile(file_path)
+data = rdt.reformate(file.getData())
+
+state_0, state_1 = data[0], data[40]
+states = [state_0,state_1] # in [[i,q],[i,q],...] formate.
+```
+
+When you got the data in the right formate, your able to run the package like so:
+
+```python
+# Set the instence 
+rd = rdt.Readout(data=states, size=1000, verbose=1)
+
+# Plot
+rd.plot_classifier() # this plots the classifier with the data used for the fitting.
+
+# Use
+rd.predict(data[1]) # this returns a list of states for the single shot in data[1].
+
+```
+
+If a h5data file is available import this directly instead of only the QI vecrtors (see example two).
+
+
+
+
+### Example Two - H5data file
 To begin using the module get your h5data file path run it like shown.
 
 ```python
@@ -35,7 +74,7 @@ rd.plot_classifier()
 This will return a plot of the classifier and training data used for determination.
 
 
-### Example Two - predicting
+### Example Three - predicting
 To use a classifier to predict the state of a single shot, run the following line.
 
 ```python
@@ -45,7 +84,7 @@ rd.predict(data)
 where `data` is the QI-array or single-shot you want the predict.
 
 
-### Example Two - saveing
+### Example Four - saveing
 After estimating a classifier you can save it as a pickle file, so that you keep the same classifier.
 
 ```python

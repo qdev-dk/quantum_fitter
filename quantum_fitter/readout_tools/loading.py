@@ -6,7 +6,7 @@ class DataImport:
     """This class contains all importing and reformatting functions. Furthermore it controls the data size used and the import and export of classifiers.
     """
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, 
-                 labels=None, size=None, kfolds=10):
+                 labels=None, size=None, kfolds=10, data=None):
         """Initializes a instance of the class. If no entries are given it defines the best entries for classification from the mean. 
 
         Args:
@@ -19,25 +19,30 @@ class DataImport:
         """
         
         self._filePath = filePath
-        self.h5file = lab.LogFile(self._filePath)
-        self.channeldict = self.h5file.getChannelValuesAsDict()
+        self._data = np.array(data)
         
+        if self._filePath != None:
+            self.h5file = lab.LogFile(self._filePath)
+            self.channeldict = self.h5file.getChannelValuesAsDict()
+            
         self.size = size
         self.kfolds = kfolds
         
         self.kernel = None
         self.classifer = None
         self.set_data(channelName=channelName)
-    
-        # define states
-        self.data_mean = self._min_max_index()
-    
-        if state_entries:
-            self.state_entries = state_entries
-        else:
-            self.state_entries = self.data_mean[1]
-          
-        self.set_states(state_entries=entries, labels=labels)  
+        
+        if self._filePath != None:
+            # define states
+            self.data_mean = self._min_max_index()
+        
+            if state_entries:
+                self.state_entries = state_entries
+            else:
+                self.state_entries = self.data_mean[1]
+                
+                
+        self.set_states(data=data, state_entries=entries, labels=labels)  
             
     def set_data(self, channelName=None, state_entries=None, channelName_log='Pulse Generator - Amplitude', unit_log='V'):
         """Selects the data set which is gonna be used in the further calculations.
@@ -49,23 +54,24 @@ class DataImport:
             unit_log (str, optional): The units of the unit scale. Defaults to 'V'.
         """
         import h5py
+        if self._filePath != None:
+            h5data = self.h5file.getData(channelName, entry=state_entries)
+            self.h5data = self._reformate(h5data)
+            
+            self.h5data_index = {'name' : 'Index', 
+                                'axis' : range(self.h5file.getNumberOfEntries())}
         
-        h5data = self.h5file.getData(channelName, entry=state_entries)
-        self.h5data = self._reformate(h5data)
-        
-        self.h5data_index = {'name' : 'Index', 
-                             'axis' : range(self.h5file.getNumberOfEntries())}
-        
-        try:
-            h5data_temp = h5py.File(self._filePath, 'r')
-            h5datalog = h5data_temp['Data']['Data'][:]
-            self.h5data_log = {'name' : f'{channelName_log} [{unit_log}]', 
-                               'axis' : h5datalog[:,0,0]}
-        except:
-            print('channelName_log not in h5data. Setting Pulse Generator Amplitude to index')
-            self.h5data_log = self.h5data_index
+            try:
+                h5data_temp = h5py.File(self._filePath, 'r')
+                h5datalog = h5data_temp['Data']['Data'][:]
+                self.h5data_log = {'name' : f'{channelName_log} [{unit_log}]', 
+                                'axis' : h5datalog[:,0,0]}
+            except:
+                print('channelName_log not in h5data. Setting Pulse Generator Amplitude to index')
+                self.h5data_log = self.h5data_index
+    
              
-    def set_states(self, state_entries=None, labels=None, offset=None):
+    def set_states(self, data=None, state_entries=None, labels=None, offset=None):
         """Sets the entries of the "cleanest" states of the data set to be used in further calculations.
 
         Args:
@@ -76,7 +82,10 @@ class DataImport:
         if state_entries:
             self.state_entries = state_entries
         
-        self._int_states = self.h5data[np.array(self.state_entries)]
+        if self._data.any() != None:
+            self._int_states = self._data
+        else:
+            self._int_states = self.h5data[np.array(self.state_entries)]
         
         if offset:
             self._int_states[-1] = self._int_states[-1] + offset
@@ -84,7 +93,7 @@ class DataImport:
         if labels != None: 
                 self._states_labels = labels 
         else: 
-            self._states_labels = range(len(self.state_entries))
+            self._states_labels = range(len(self._int_states))
         
         self.set_dataset_size()
                  
@@ -110,7 +119,7 @@ class DataImport:
         for i, j in enumerate(X):
             state_list.append(j[:self.size])
             if X_temp == True: 
-                label_list.append(np.ones(state_list[i].shape[0]) * self._states_labels[i])
+                label_list.append(np.ones(np.array(state_list[i]).shape[0]) * self._states_labels[i])
             
         if X_temp == True:  
             self._states_X = np.concatenate(state_list)
@@ -128,14 +137,6 @@ class DataImport:
                                                             test_size=(1/self.kfolds), random_state=0)
         
         self._matrix_weights()
-        
-    def _reformate(self, X):
-        """A function that reformates data if not in the right format. The wanted format is [[i,q],[i,q], ...]
-        """ 
-        h5data_reformated = []
-        for i in range(len(X)):
-            h5data_reformated.append(np.column_stack((X[i].real, X[i].imag)))
-        return np.array(h5data_reformated)
         
     def _min_max_index(self, X=None):
         """Max/min function used to determine the initial states, by calculating the mean of the data in the IQ plane for all entries and Finding the index for the min and max value.

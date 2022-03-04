@@ -2,14 +2,16 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
-from quantum_fitter.readout_tools import *
+from .fitting import *
+
+
 
 class Plotting(Fitting):
     """This class contains all plotting functions.
     """
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6),
-                 alpha=0.70):
+                 alpha=0.70, data=None):
         """Initializes the class and sits figure size an alpha val.
 
         Args:
@@ -26,12 +28,12 @@ class Plotting(Fitting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         """
-        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds)
+        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
 
         self.figsize = figsize
         self.alpha = alpha
     
-    def plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
+    def _plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
         """Plots the decision function for a 2D decision function
 
         Args:
@@ -120,7 +122,7 @@ class Plotting(Fitting):
             plt.scatter(X[:, 0][y==i], X[:, 1][y==i], s=50 * sample_weight[y==i], alpha=self.alpha, cmap='Spectral', label=f'State {int(i)}')
         
         if class_plot == True:
-            self.plot_classifier_decision_function()
+            self._plot_classifier_decision_function()
 
         ax.set_xlabel("I (V)"), ax.set_ylabel("Q (V)")
         
@@ -139,7 +141,7 @@ class Plotting(Fitting):
         
         return ax
  
-    def plot_testing(self, X=None, save_fig=False, title=None):
+    def plot_testing(self, X=None, save_fig=False, title=None, size=None):
         """A function for plotting the testing of a dataset.
 
         Args:
@@ -154,16 +156,22 @@ class Plotting(Fitting):
         if X is None:
             X = self.X_test
         
+        if size:
+            X = X[:size]
+            
         predcition = np.array(self.cv_search.predict(X))
         unique, counts = np.unique(predcition, return_counts=True)
 
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        for i in np.unique(predcition):   
-            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap='Spectral', label=f'State {int(i)}, {counts/len(predcition):.3}:.%')
+        for i, j in enumerate(unique):   
+            procent = counts[i]/len(X)
+            text = f"State {int(j)}, {procent:.3}%"
+            
+            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap='Spectral', label=text)
         
         
-        self.plot_classifier_decision_function(plot_support=False)
+        self._plot_classifier_decision_function(plot_support=False)
 
         ax.set_xlabel("I"), ax.set_ylabel("Q")
         
@@ -297,8 +305,8 @@ class Plotting(Fitting):
         ax.set_title("Scores of candidates over iterations")
         
         if title == None:
-            kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._get_file_name_from_path(self._filePath)
+        kernel = self.cv_search.best_estimator_[-1].kernel
         
         ax.set_title(f'Scores of candidates over iterations, kernel: {kernel} \n' + title)
         
@@ -315,8 +323,8 @@ class Plotting(Fitting):
         """Function for oscillation plot. For more information to see example "quick_run".
 
         Args:
-            x (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
-            y (_type_, optional): If None: self.h5data_log['axis']. Defaults to None.
+            x (_type_, optional): If None: self.h5data_log['axis']. Defaults to None.
+            y (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
             X (list, optional): The X-data to use. If None the Initial states are used: self.X_test. Defaults to None.
             size (int, optional): The size of the data set used. Must be integer. Defaults to None.
             mode (str, optional): Can be ['probability','expectation']. Defaults to 'probability'.
@@ -356,8 +364,11 @@ class Plotting(Fitting):
         
         for i, key in enumerate(y.keys()): 
             if x is None:
-                x = self.h5data_log['axis']
-            
+                try:
+                    x = range(X.shape[0])
+                except:
+                    x = self.h5data_log['axis']
+                                
             if mode == 'probability' and self._osc_state == 'all':
                 y = np.array(self.probability_values[key])
                 for j in range(y.shape[1]):

@@ -5,13 +5,14 @@ from scipy.stats import randint, uniform
 from sklearn.utils.fixes import loguniform
 from sklearn import svm
 
-from quantum_fitter.readout_tools import *
+from .loading import *
+
 
 class Fitting(DataImport):
     """This class contains all fitting functions.
     """
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, size=None, 
-                 scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10):
+                 scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, data=None):
         """Creates instance of the class and set the default classifier, pipeline, parameters and cv_search values.
 
         Args:
@@ -26,7 +27,7 @@ class Fitting(DataImport):
             verbose (int, optional): If 0 only the result is returned. Defaults to 1.
             kfolds (int, optional): Number of splits in the dataset. Used for crossvalidation. Defaults to 10.
         """
-        super().__init__(filePath=filePath, channelName=channelName, entries=entries, state_entries=state_entries, labels=labels, size=size, kfolds=kfolds)  
+        super().__init__(filePath=filePath, channelName=channelName, entries=entries, state_entries=state_entries, labels=labels, size=size, kfolds=kfolds, data=data)  
         
         self.verbose = verbose
         
@@ -99,7 +100,7 @@ class Fitting(DataImport):
         
         self.cv_params_all = {
                     # SVM
-                    'classifier__kernel': ['linear', 'poly', 'rbf', 'sigmoid'], 
+                    'classifier__kernel': ['linear', 'rbf'], #'poly', 'sigmoid'
                     'classifier__degree': randint(2,4), 
                     'classifier__gamma': ['scale', 'auto'],   #or use: loguniform(1e-2, 1e2)
                     'classifier__coef0': randint(1,15),
@@ -141,7 +142,7 @@ class Fitting(DataImport):
                 self.cv_params.pop(key, None)
                 print(key, 'is no longer in cv_params')  
     
-    def set_cv_search(self, mode='random', aggressive_elimination=False):
+    def set_cv_search(self, mode='random', aggressive_elimination=False, min_resources='smallest'):
         """Sets the type of cross validation.
 
         Args:
@@ -157,15 +158,13 @@ class Fitting(DataImport):
             self._int_mode = mode
         if hasattr(self, '_int_aggressive_elimination') == False or aggressive_elimination == True:
             self._int_aggressive_elimination = aggressive_elimination
-       
-        
         
         self._kfold = StratifiedKFold(n_splits=(self.kfolds-1), random_state=0, shuffle=True)
         
         if self._int_mode == 'random':
             self.cv_search = HalvingRandomSearchCV(self.pipeline, param_distributions=self.cv_params,
                         random_state=0, cv=self._kfold, n_jobs=-1, aggressive_elimination=self._int_aggressive_elimination, 
-                        error_score=np.NaN, verbose=self.verbose)
+                        error_score=np.NaN, verbose=self.verbose, min_resources=min_resources)
     
         elif self._int_mode == 'grid':
             self.cv_search = GridSearchCV(self.pipeline, self.cv_params, scoring='average_precision', 
