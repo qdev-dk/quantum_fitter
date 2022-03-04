@@ -31,14 +31,16 @@
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
-from quantum_fitter.readout_tools import *
+from .fitting import *
+
+
 
 class Plotting(Fitting):
     &#34;&#34;&#34;This class contains all plotting functions.
     &#34;&#34;&#34;
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6),
-                 alpha=0.70):
+                 alpha=0.70, data=None):
         &#34;&#34;&#34;Initializes the class and sits figure size an alpha val.
 
         Args:
@@ -55,12 +57,12 @@ class Plotting(Fitting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         &#34;&#34;&#34;
-        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds)
+        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
 
         self.figsize = figsize
         self.alpha = alpha
     
-    def plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
+    def _plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
         &#34;&#34;&#34;Plots the decision function for a 2D decision function
 
         Args:
@@ -149,7 +151,7 @@ class Plotting(Fitting):
             plt.scatter(X[:, 0][y==i], X[:, 1][y==i], s=50 * sample_weight[y==i], alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}&#39;)
         
         if class_plot == True:
-            self.plot_classifier_decision_function()
+            self._plot_classifier_decision_function()
 
         ax.set_xlabel(&#34;I (V)&#34;), ax.set_ylabel(&#34;Q (V)&#34;)
         
@@ -168,7 +170,7 @@ class Plotting(Fitting):
         
         return ax
  
-    def plot_testing(self, X=None, save_fig=False, title=None):
+    def plot_testing(self, X=None, save_fig=False, title=None, size=None):
         &#34;&#34;&#34;A function for plotting the testing of a dataset.
 
         Args:
@@ -183,16 +185,22 @@ class Plotting(Fitting):
         if X is None:
             X = self.X_test
         
+        if size:
+            X = X[:size]
+            
         predcition = np.array(self.cv_search.predict(X))
         unique, counts = np.unique(predcition, return_counts=True)
 
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        for i in np.unique(predcition):   
-            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}, {counts/len(predcition):.3}:.%&#39;)
+        for i, j in enumerate(unique):   
+            procent = counts[i]/len(X)
+            text = f&#34;State {int(j)}, {procent:.3}%&#34;
+            
+            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=text)
         
         
-        self.plot_classifier_decision_function(plot_support=False)
+        self._plot_classifier_decision_function(plot_support=False)
 
         ax.set_xlabel(&#34;I&#34;), ax.set_ylabel(&#34;Q&#34;)
         
@@ -326,8 +334,8 @@ class Plotting(Fitting):
         ax.set_title(&#34;Scores of candidates over iterations&#34;)
         
         if title == None:
-            kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._get_file_name_from_path(self._filePath)
+        kernel = self.cv_search.best_estimator_[-1].kernel
         
         ax.set_title(f&#39;Scores of candidates over iterations, kernel: {kernel} \n&#39; + title)
         
@@ -344,8 +352,8 @@ class Plotting(Fitting):
         &#34;&#34;&#34;Function for oscillation plot. For more information to see example &#34;quick_run&#34;.
 
         Args:
-            x (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
-            y (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+            x (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+            y (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
             X (list, optional): The X-data to use. If None the Initial states are used: self.X_test. Defaults to None.
             size (int, optional): The size of the data set used. Must be integer. Defaults to None.
             mode (str, optional): Can be [&#39;probability&#39;,&#39;expectation&#39;]. Defaults to &#39;probability&#39;.
@@ -385,8 +393,11 @@ class Plotting(Fitting):
         
         for i, key in enumerate(y.keys()): 
             if x is None:
-                x = self.h5data_log[&#39;axis&#39;]
-            
+                try:
+                    x = range(X.shape[0])
+                except:
+                    x = self.h5data_log[&#39;axis&#39;]
+                                
             if mode == &#39;probability&#39; and self._osc_state == &#39;all&#39;:
                 y = np.array(self.probability_values[key])
                 for j in range(y.shape[1]):
@@ -454,7 +465,7 @@ class Plotting(Fitting):
 <dl>
 <dt id="quantum_fitter.readout_tools.plotting.Plotting"><code class="flex name class">
 <span>class <span class="ident">Plotting</span></span>
-<span>(</span><span>filePath=None, channelName=None, entries=None, state_entries=None, labels=None, size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6), alpha=0.7)</span>
+<span>(</span><span>filePath=None, channelName=None, entries=None, state_entries=None, labels=None, size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6), alpha=0.7, data=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This class contains all plotting functions.</p>
@@ -495,7 +506,7 @@ class Plotting(Fitting):
     &#34;&#34;&#34;
     def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6),
-                 alpha=0.70):
+                 alpha=0.70, data=None):
         &#34;&#34;&#34;Initializes the class and sits figure size an alpha val.
 
         Args:
@@ -512,12 +523,12 @@ class Plotting(Fitting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         &#34;&#34;&#34;
-        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds)
+        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
 
         self.figsize = figsize
         self.alpha = alpha
     
-    def plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
+    def _plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
         &#34;&#34;&#34;Plots the decision function for a 2D decision function
 
         Args:
@@ -606,7 +617,7 @@ class Plotting(Fitting):
             plt.scatter(X[:, 0][y==i], X[:, 1][y==i], s=50 * sample_weight[y==i], alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}&#39;)
         
         if class_plot == True:
-            self.plot_classifier_decision_function()
+            self._plot_classifier_decision_function()
 
         ax.set_xlabel(&#34;I (V)&#34;), ax.set_ylabel(&#34;Q (V)&#34;)
         
@@ -625,7 +636,7 @@ class Plotting(Fitting):
         
         return ax
  
-    def plot_testing(self, X=None, save_fig=False, title=None):
+    def plot_testing(self, X=None, save_fig=False, title=None, size=None):
         &#34;&#34;&#34;A function for plotting the testing of a dataset.
 
         Args:
@@ -640,16 +651,22 @@ class Plotting(Fitting):
         if X is None:
             X = self.X_test
         
+        if size:
+            X = X[:size]
+            
         predcition = np.array(self.cv_search.predict(X))
         unique, counts = np.unique(predcition, return_counts=True)
 
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        for i in np.unique(predcition):   
-            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}, {counts/len(predcition):.3}:.%&#39;)
+        for i, j in enumerate(unique):   
+            procent = counts[i]/len(X)
+            text = f&#34;State {int(j)}, {procent:.3}%&#34;
+            
+            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=text)
         
         
-        self.plot_classifier_decision_function(plot_support=False)
+        self._plot_classifier_decision_function(plot_support=False)
 
         ax.set_xlabel(&#34;I&#34;), ax.set_ylabel(&#34;Q&#34;)
         
@@ -783,8 +800,8 @@ class Plotting(Fitting):
         ax.set_title(&#34;Scores of candidates over iterations&#34;)
         
         if title == None:
-            kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._get_file_name_from_path(self._filePath)
+        kernel = self.cv_search.best_estimator_[-1].kernel
         
         ax.set_title(f&#39;Scores of candidates over iterations, kernel: {kernel} \n&#39; + title)
         
@@ -801,8 +818,8 @@ class Plotting(Fitting):
         &#34;&#34;&#34;Function for oscillation plot. For more information to see example &#34;quick_run&#34;.
 
         Args:
-            x (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
-            y (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+            x (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+            y (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
             X (list, optional): The X-data to use. If None the Initial states are used: self.X_test. Defaults to None.
             size (int, optional): The size of the data set used. Must be integer. Defaults to None.
             mode (str, optional): Can be [&#39;probability&#39;,&#39;expectation&#39;]. Defaults to &#39;probability&#39;.
@@ -842,8 +859,11 @@ class Plotting(Fitting):
         
         for i, key in enumerate(y.keys()): 
             if x is None:
-                x = self.h5data_log[&#39;axis&#39;]
-            
+                try:
+                    x = range(X.shape[0])
+                except:
+                    x = self.h5data_log[&#39;axis&#39;]
+                                
             if mode == &#39;probability&#39; and self._osc_state == &#39;all&#39;:
                 y = np.array(self.probability_values[key])
                 for j in range(y.shape[1]):
@@ -1075,7 +1095,7 @@ class Plotting(Fitting):
         plt.scatter(X[:, 0][y==i], X[:, 1][y==i], s=50 * sample_weight[y==i], alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}&#39;)
     
     if class_plot == True:
-        self.plot_classifier_decision_function()
+        self._plot_classifier_decision_function()
 
     ax.set_xlabel(&#34;I (V)&#34;), ax.set_ylabel(&#34;Q (V)&#34;)
     
@@ -1093,85 +1113,6 @@ class Plotting(Fitting):
     plt.show()
     
     return ax</code></pre>
-</details>
-</dd>
-<dt id="quantum_fitter.readout_tools.plotting.Plotting.plot_classifier_decision_function"><code class="name flex">
-<span>def <span class="ident">plot_classifier_decision_function</span></span>(<span>self, resolution=350, ax=None, plot_support=True)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Plots the decision function for a 2D decision function</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>resolution</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Resolution of the plotted decision function. Defaults to 350.</dd>
-<dt><strong><code>ax</code></strong> :&ensp;<code>string</code>, optional</dt>
-<dd>The plot ax to use, if ax=None then new ax is generated. Defaults to None.</dd>
-<dt><strong><code>plot_support</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>Plots exstra data, just nicense. Defaults to True.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
-    &#34;&#34;&#34;Plots the decision function for a 2D decision function
-
-    Args:
-        resolution (int, optional): Resolution of the plotted decision function. Defaults to 350.
-        ax (string, optional): The plot ax to use, if ax=None then new ax is generated. Defaults to None.
-        plot_support (bool, optional): Plots exstra data, just nicense. Defaults to True.
-    &#34;&#34;&#34;
-    if ax is None:
-        ax = plt.gca()
-    xlim = ax.get_xlim()
-    ylim = ax.get_ylim()
-
-    # create grid to evaluate classifiermodel
-    x = np.linspace(xlim[0], xlim[1], resolution)
-    y = np.linspace(ylim[0], ylim[1], resolution)
-    Y, X = np.meshgrid(y, x)
-    xy = np.c_[X.ravel(), Y.ravel()]    #xy = np.array([X.ravel(), Y.ravel()]).T
-
-    self._try_fit()
-    
-    if ((hasattr(self.cv_search, &#39;decision_function&#39;)) and (len(self._states_labels) &lt; 3)):
-        P = self.cv_search.decision_function(xy)
-    else:
-        P = self.cv_search.predict(xy)
-
-    self.decision_function = P.reshape(X.shape)
-
-    if ((hasattr(self.cv_search, &#39;decision_function&#39;)) and (len(self._states_labels) &lt; 3)):
-        levels = [-1, 0, 1]
-        linestyles = [&#39;--&#39;, &#39;-&#39;, &#39;--&#39;]
-    else:
-        list, j = [], 0
-        for i in range(len(self.state_entries)):
-            num = i-j
-            if (i % 2) == 0:
-                list.append(0.5 + num*0.5)
-            else:
-                j += 1
-                list.append(0.5 - num*0.5)
-           
-        levels = list.sort()
-        linestyles = [&#39;-&#39;] * len(self.state_entries)
-
-    ax.contour(X, Y, self.decision_function, colors=&#39;k&#39;,
-               alpha=0.5, levels=levels,
-               linestyles=linestyles)
-
-    # plot support vectors
-    if hasattr(self.cv_search, &#39;support_vectors_&#39;):
-        if plot_support:
-            ax.scatter(self.cv_search.support_vectors_[:, 0],
-                       self.cv_search.support_vectors_[:, 1],
-                       s=300,
-                       alpha=0.7, linewidth=1,
-                       facecolors=&#39;None&#39;, edgecolors=&#34;k&#34;)
-
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)</code></pre>
 </details>
 </dd>
 <dt id="quantum_fitter.readout_tools.plotting.Plotting.plot_cv_iterations"><code class="name flex">
@@ -1222,8 +1163,8 @@ class Plotting(Fitting):
     ax.set_title(&#34;Scores of candidates over iterations&#34;)
     
     if title == None:
-        kernel = self.cv_search.best_estimator_[-1].kernel
         title = self._get_file_name_from_path(self._filePath)
+    kernel = self.cv_search.best_estimator_[-1].kernel
     
     ax.set_title(f&#39;Scores of candidates over iterations, kernel: {kernel} \n&#39; + title)
     
@@ -1245,9 +1186,9 @@ class Plotting(Fitting):
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>x</code></strong> :&ensp;<code>_type_</code>, optional</dt>
-<dd>If None: self.probability_values or self.expectation_values. Defaults to None.</dd>
-<dt><strong><code>y</code></strong> :&ensp;<code>_type_</code>, optional</dt>
 <dd>If None: self.h5data_log['axis']. Defaults to None.</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>_type_</code>, optional</dt>
+<dd>If None: self.probability_values or self.expectation_values. Defaults to None.</dd>
 <dt><strong><code>X</code></strong> :&ensp;<code>list</code>, optional</dt>
 <dd>The X-data to use. If None the Initial states are used: self.X_test. Defaults to None.</dd>
 <dt><strong><code>size</code></strong> :&ensp;<code>int</code>, optional</dt>
@@ -1269,8 +1210,8 @@ class Plotting(Fitting):
     &#34;&#34;&#34;Function for oscillation plot. For more information to see example &#34;quick_run&#34;.
 
     Args:
-        x (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
-        y (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+        x (_type_, optional): If None: self.h5data_log[&#39;axis&#39;]. Defaults to None.
+        y (_type_, optional): If None: self.probability_values or self.expectation_values. Defaults to None.
         X (list, optional): The X-data to use. If None the Initial states are used: self.X_test. Defaults to None.
         size (int, optional): The size of the data set used. Must be integer. Defaults to None.
         mode (str, optional): Can be [&#39;probability&#39;,&#39;expectation&#39;]. Defaults to &#39;probability&#39;.
@@ -1310,8 +1251,11 @@ class Plotting(Fitting):
     
     for i, key in enumerate(y.keys()): 
         if x is None:
-            x = self.h5data_log[&#39;axis&#39;]
-        
+            try:
+                x = range(X.shape[0])
+            except:
+                x = self.h5data_log[&#39;axis&#39;]
+                            
         if mode == &#39;probability&#39; and self._osc_state == &#39;all&#39;:
             y = np.array(self.probability_values[key])
             for j in range(y.shape[1]):
@@ -1387,7 +1331,7 @@ class Plotting(Fitting):
 </details>
 </dd>
 <dt id="quantum_fitter.readout_tools.plotting.Plotting.plot_testing"><code class="name flex">
-<span>def <span class="ident">plot_testing</span></span>(<span>self, X=None, save_fig=False, title=None)</span>
+<span>def <span class="ident">plot_testing</span></span>(<span>self, X=None, save_fig=False, title=None, size=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A function for plotting the testing of a dataset.</p>
@@ -1406,7 +1350,7 @@ class Plotting(Fitting):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_testing(self, X=None, save_fig=False, title=None):
+<pre><code class="python">def plot_testing(self, X=None, save_fig=False, title=None, size=None):
     &#34;&#34;&#34;A function for plotting the testing of a dataset.
 
     Args:
@@ -1421,16 +1365,22 @@ class Plotting(Fitting):
     if X is None:
         X = self.X_test
     
+    if size:
+        X = X[:size]
+        
     predcition = np.array(self.cv_search.predict(X))
     unique, counts = np.unique(predcition, return_counts=True)
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    for i in np.unique(predcition):   
-        plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=f&#39;State {int(i)}, {counts/len(predcition):.3}:.%&#39;)
+    for i, j in enumerate(unique):   
+        procent = counts[i]/len(X)
+        text = f&#34;State {int(j)}, {procent:.3}%&#34;
+        
+        plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap=&#39;Spectral&#39;, label=text)
     
     
-    self.plot_classifier_decision_function(plot_support=False)
+    self._plot_classifier_decision_function(plot_support=False)
 
     ax.set_xlabel(&#34;I&#34;), ax.set_ylabel(&#34;Q&#34;)
     
@@ -1495,10 +1445,9 @@ class Plotting(Fitting):
 <ul>
 <li>
 <h4><code><a title="quantum_fitter.readout_tools.plotting.Plotting" href="#quantum_fitter.readout_tools.plotting.Plotting">Plotting</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_ROC" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_ROC">plot_ROC</a></code></li>
 <li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_classifier" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_classifier">plot_classifier</a></code></li>
-<li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_classifier_decision_function" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_classifier_decision_function">plot_classifier_decision_function</a></code></li>
 <li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_cv_iterations" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_cv_iterations">plot_cv_iterations</a></code></li>
 <li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_oscillation" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_oscillation">plot_oscillation</a></code></li>
 <li><code><a title="quantum_fitter.readout_tools.plotting.Plotting.plot_param_effect" href="#quantum_fitter.readout_tools.plotting.Plotting.plot_param_effect">plot_param_effect</a></code></li>
