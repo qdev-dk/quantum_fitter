@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 # Set up path
 dir = os.path.dirname(__file__)
-dir
 file_path = os.path.join(dir, 'example_data/ss_q1_rabi_v_ampl_5_fine.hdf5')
 
 

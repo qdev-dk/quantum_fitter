@@ -172,7 +172,73 @@ class Readout(Plotting):
             h5data_reformated.append(np.column_stack((X[i].real, X[i].imag)))
         return np.array(h5data_reformated)
 
+    
+    def calculate_temp(self, X=None, prob=None, freq=None, size=None):
+        def temp(prob_1, freq):
+            from scipy.constants import hbar, k, pi
+            
+            if np.array(prob_1).size > 1:
+                prob_0 = prob[0]
+                prob_1 = prob[1]
+            else:
+                prob_0 = 1 - prob_1
+                    
+            return (hbar*(2*pi*freq)) / (np.log(prob_0/prob_1) * k)
+        
+        def avg_function(self, Xi, state):
+            predcition = self.cv_search.predict(Xi)
+            n_states =  len(self._states_labels)
+            
+            prob_list = []
+            for i, state_i in enumerate(self._states_labels):
+                if state_i == state:
+                    i_state = i
+                    
+                predcition_i = np.where((predcition == state_i), 1, 0)
+                prob_predcition_i = np.average(predcition_i, axis=0)
+                prob_list.append(prob_predcition_i)
+            
+            prob_list_temp = prob_list.copy()
+            
+            if n_states == 3:
+                prob_list_temp[1] /= 2
+                prob_list_temp.insert(1, prob_list_temp[1])
 
+            if state == 'all':
+                prob_predcition_avg.append(prob_list)
+            else:
+                prob_predcition_avg.append(prob_list[i_state])
+        
+        if freq == None:
+            try:
+                freq = self.h5file.getChannelValue('RS Drive - Frequency')
+            except:
+                print('There is no frequnecy to be fund in the h5file. Please imput freq.')
+                
+        if prob == None:
+            try:
+                prob = []
+                for key in self.probability_values.keys():
+                    prob.append(self.probability_values[key][0])
+            except:
+                self._try_fit()
+                prob_predcition_avg = []
+                
+                if X == None:
+                    X = self.h5data
+                    
+                X = self.set_dataset_size(size=size, X=X)
+                avg_function(self, X[0], 1)
+                
+                prob = prob_predcition_avg
+            
+        if hasattr(self, 'temp_list') ==  False:
+            self.temp_list = []
+            self.temp_prob_list = []
+     
+        for prob_i in prob:
+            self.temp_prob_list.append(prob_i)
+            self.temp_list.append(temp(prob_i, freq))
  
 def reformate(X):
     """A function that reformates data if not in the right format. The wanted format is [[i,q],[i,q], ...]

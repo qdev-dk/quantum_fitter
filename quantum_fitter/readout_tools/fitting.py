@@ -259,6 +259,7 @@ class Fitting(DataImport):
         """
         import quantum_fitter as qf
         from lmfit import Model
+        import lmfit
         
         def str_none_if_none(stderr):
             if stderr is None:
@@ -280,8 +281,35 @@ class Fitting(DataImport):
         
         t1.do_fit()
         
+        
+        """def resid(params, x, ydata):
+            A = params['A'].value
+            c = params['c'].value
+            omega = params['omega'].value
+            phi = params['phi'].value
+
+            y_model = self.oscillations(x, A, omega, phi, c)
+            return y_model - ydata"""
+        
+        
         x_eval = np.linspace(min(x), max(x), 100)
         y_eval = t1.eval(x=x_eval)
+        
+        """params_t1 = t1.fit_params()
+        
+        
+        params = lmfit.Parameters()
+        for key in params_t1.keys():
+            params.add(key, params_t1[key])
+      
+        print(params)
+        
+        method = 'L-BFGS-B'
+        o1 = lmfit.minimize(resid, params, args=(np.array(x), np.array(y)), method=method,
+                    reduce_fcn='neglogcauchy')
+        lmfit.report_fit(o1)
+        
+        ax.plot(np.array(x), np.array(y)+o1.residual, label='resid', c='red')"""
         
         fit_params, error_params = t1.result.best_values, t1._params_stderr()
         

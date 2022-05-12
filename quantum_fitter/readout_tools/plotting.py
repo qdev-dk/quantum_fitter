@@ -166,10 +166,9 @@ class Plotting(Fitting):
 
         for i, j in enumerate(unique):   
             procent = counts[i]/len(X)
-            text = f"State {int(j)}, {procent:.3}%"
+            text = f"State {int(j)}, {procent*100:.3}%"
             
             plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap='Spectral', label=text)
-        
         
         self._plot_classifier_decision_function(plot_support=False)
 
@@ -422,4 +421,16 @@ class Plotting(Fitting):
         plt.tight_layout()
         
         return ax
+    
+    def plot_temp(self, save_fig=False, title=None, size=None):
+        self.calculate_temp()
         
+        if title == None:
+            title_ = self._get_file_name_from_path(self._filePath)
+        kernel_ = self.cv_search.best_estimator_[-1].kernel
+
+        ax = self.plot_testing(X=self.h5data[0], save_fig=save_fig, title=title, size=size)
+        ax.set_title(f'Classifiter temperature plot, kernel: {kernel_}\n' + f'Qbit temperature: {(self.temp_list[-1]*1000):.3} mK\n' + title_ )
+        
+    
+        return ax
