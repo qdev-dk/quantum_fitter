@@ -11,7 +11,7 @@ from .loading import *
 class Fitting(DataImport):
     """This class contains all fitting functions.
     """
-    def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, size=None, 
+    def __init__(self, filePath=None, fileName=None, channelName=None, entries=None, state_entries=None, labels=None, size=None, 
                  scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, data=None):
         """Creates instance of the class and set the default classifier, pipeline, parameters and cv_search values.
 
@@ -27,7 +27,7 @@ class Fitting(DataImport):
             verbose (int, optional): If 0 only the result is returned. Defaults to 1.
             kfolds (int, optional): Number of splits in the dataset. Used for crossvalidation. Defaults to 10.
         """
-        super().__init__(filePath=filePath, channelName=channelName, entries=entries, state_entries=state_entries, labels=labels, size=size, kfolds=kfolds, data=data)  
+        super().__init__(filePath=filePath, fileName=fileName, channelName=channelName, entries=entries, state_entries=state_entries, labels=labels, size=size, kfolds=kfolds, data=data)  
         
         self.verbose = verbose
         
@@ -100,7 +100,7 @@ class Fitting(DataImport):
         
         self.cv_params_all = {
                     # SVM
-                    'classifier__kernel': ['linear', 'rbf'], #'poly', 'sigmoid'
+                    'classifier__kernel': ['linear', 'rbf', 'poly', 'sigmoid'], #'poly', 'sigmoid'
                     'classifier__degree': randint(2,4), 
                     'classifier__gamma': ['scale', 'auto'],   #or use: loguniform(1e-2, 1e2)
                     'classifier__coef0': randint(1,15),

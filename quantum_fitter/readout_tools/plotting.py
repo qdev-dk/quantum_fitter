@@ -9,7 +9,7 @@ from .fitting import *
 class Plotting(Fitting):
     """This class contains all plotting functions.
     """
-    def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
+    def __init__(self, filePath=None, fileName=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6),
                  alpha=0.70, data=None):
         """Initializes the class and sits figure size an alpha val.
@@ -28,7 +28,7 @@ class Plotting(Fitting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         """
-        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
+        super().__init__(filePath, fileName, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
 
         self.figsize = figsize
         self.alpha = alpha
@@ -107,7 +107,7 @@ class Plotting(Fitting):
         Returns:
             ax (object): The figure object
         """
-        fig, ax = plt.subplots(figsize=self.figsize)
+        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
         if X is None:
             X = np.array(self.X_train)
@@ -124,22 +124,21 @@ class Plotting(Fitting):
         if class_plot == True:
             self._plot_classifier_decision_function()
 
-        ax.set_xlabel("I (V)"), ax.set_ylabel("Q (V)")
+        ax.set_xlabel("I [V]"), ax.set_ylabel("Q [V]")
         
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
         
         ax.set_title(f'Classifiter training plot, kernel: {kernel}\n' + title)
         
         plt.legend()
-        plt.tight_layout()
         
-        if save_fig == True:
-            self.save_fig(self.cv_search, name='classifier_plot',  format='.svg', dpi=600)
+        self.savefigure("classifier_plot", save_fig)
         plt.show()
         
         return ax
+ 
  
     def plot_testing(self, X=None, save_fig=False, title=None, size=None):
         """A function for plotting the testing of a dataset.
@@ -162,7 +161,7 @@ class Plotting(Fitting):
         predcition = np.array(self.cv_search.predict(X))
         unique, counts = np.unique(predcition, return_counts=True)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
         for i, j in enumerate(unique):   
             procent = counts[i]/len(X)
@@ -172,20 +171,17 @@ class Plotting(Fitting):
         
         self._plot_classifier_decision_function(plot_support=False)
 
-        ax.set_xlabel("I"), ax.set_ylabel("Q")
+        ax.set_xlabel("I [V]"), ax.set_ylabel("Q [V]")
         
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
         
         ax.set_title(f'Classifiter testing plot, kernel: {kernel}\n' + title )
         
         plt.legend()
-        plt.tight_layout()
 
-        if save_fig == True:
-            self.save_fig(self.cv_search, name='testing_plot',  format='.svg', dpi=600)
-
+        self.savefigure("testing_plot", save_fig)
         return ax
     
     def plot_ROC(self, X=None, y=None, save_fig=False, title=None):
@@ -202,7 +198,7 @@ class Plotting(Fitting):
         """
         from sklearn.metrics import roc_curve, auc
         
-        fig, ax = plt.subplots(figsize=self.figsize)
+        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
         
         if X is None:
             X = self.X_test
@@ -264,16 +260,11 @@ class Plotting(Fitting):
         
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
         
         ax.set_title(f'ROC plot, kernel: {kernel}\n' + title )
         
-        
-        plt.tight_layout()
-        
-        if save_fig == True:
-            self.save_fig(self.cv_search, name='roc_plot',  format='.svg', dpi=600)
-
+        self.savefigure("roc_plot", save_fig)
         return ax
     
     def plot_cv_iterations(self, score_value="mean_test_score", save_fig=False, title=None):
@@ -292,7 +283,7 @@ class Plotting(Fitting):
         results.drop_duplicates(subset=("params_str", "iter"), inplace=True)
         
         mean_scores = results.pivot(index="iter", columns="params_str", values=score_value)
-        ax = mean_scores.plot(legend=False, alpha=0.6, figsize=(10, 6))
+        ax = mean_scores.plot(legend=False, alpha=0.6, figsize=np.array(self.figsize)*1.5)
 
         labels = [
             f"iter={i}\nn_samples={self.cv_search.n_resources_[i]}\nn_candidates={self.cv_search.n_candidates_[i]}"
@@ -304,21 +295,20 @@ class Plotting(Fitting):
         ax.set_title("Scores of candidates over iterations")
         
         if title == None:
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
         kernel = self.cv_search.best_estimator_[-1].kernel
         
         ax.set_title(f'Scores of candidates over iterations, kernel: {kernel} \n' + title)
         
         ax.set_ylabel(score_value.replace("_"," "))
         ax.set_xlabel("iterations")
+        
         plt.tight_layout()
         
-        if save_fig == True:
-            self.save_fig(self.cv_search, name='cv_iterations',  format='.svg', dpi=600)
-        
+        self.savefigure("cv_iterations", save_fig)
         return ax
     
-    def plot_oscillation(self, x=None, y=None, X=None, size=None, mode='probability', title=None, state=1):
+    def plot_oscillation(self, x=None, y=None, X=None, size=None, mode='probability', title=None, state=1, save_fig=False):
         """Function for oscillation plot. For more information to see example "quick_run".
 
         Args:
@@ -334,7 +324,7 @@ class Plotting(Fitting):
             ax (object): The figure object
         """
         if title == None:
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
             
         if size == None:
             size = self._int_states.shape[1]
@@ -347,7 +337,7 @@ class Plotting(Fitting):
 
         self._osc_state = state
        
-        fig, ax = plt.subplots(figsize=self.figsize)
+        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
         if y is None:
             if mode == 'expectation':
@@ -381,11 +371,11 @@ class Plotting(Fitting):
         fit_type = r'$A \times sin(\omega x + \varphi) + c$'
         ax.set_title(title + '\n Fit type: ' + fit_type)
         
-        plt.tight_layout()
+        self.savefigure("oscillation", save_fig)
         
         return ax
      
-    def plot_param_effect(self, plot_dir=None, title=None):
+    def plot_param_effect(self, plot_dir=None, title=None, save_fig=False):
         """A function for plotting the effects on a score of a parameter.
 
         Args:
@@ -402,23 +392,25 @@ class Plotting(Fitting):
                 print('self._plot_dir is not defined. Define using self.set_plot_dir()')
         
         try:
-            std = plot_dir['score_std']
+            std = np.array(plot_dir['score_std']) / 2
         except:
             std = None
         
-        fig, ax = plt.subplots(figsize=self.figsize)
+        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
         
         ax.errorbar(plot_dir['param_value'], plot_dir['score_value'], yerr=std)
       
     
         if title == None:
-            title = self._get_file_name_from_path(self._filePath)
+            title = self._fileName
         
         ax.set_title(f'Scores of candidates over parameter\n' + title)
         
         ax.set_ylabel(plot_dir['score_name'].replace("_"," "))
         ax.set_xlabel(plot_dir['param_name'].replace("_"," "))
-        plt.tight_layout()
+        
+        
+        self.savefigure("param_effect" + " " + plot_dir['param_name'].replace("_"," "), save_fig)
         
         return ax
     
@@ -426,11 +418,36 @@ class Plotting(Fitting):
         self.calculate_temp()
         
         if title == None:
-            title_ = self._get_file_name_from_path(self._filePath)
+            title_ = self._fileName
         kernel_ = self.cv_search.best_estimator_[-1].kernel
 
-        ax = self.plot_testing(X=self.h5data[0], save_fig=save_fig, title=title, size=size)
+        ax = self.plot_testing(X=self.h5data[0], save_fig=False, title=title, size=size)
         ax.set_title(f'Classifiter temperature plot, kernel: {kernel_}\n' + f'Qbit temperature: {(self.temp_list[-1]*1000):.3} mK\n' + title_ )
         
+        self.savefigure("temp", save_fig)
     
         return ax
+    
+    
+    def savefigure(self, title, save_fig=False):
+        if save_fig == True:
+            path = "plots/{}".format(self._fileName.replace('.hdf5',''))
+            filename = title + ', ' + self._fileName.replace('.hdf5','') + '.svg'
+            
+            self.mkdir_p(path) #try to make folder
+            
+            plt.savefig(f"{path}/{filename}", format='svg')
+ 
+    
+    def mkdir_p(self, mypath):
+        '''Creates a directory. equivalent to using mkdir -p on the command line'''
+
+        from errno import EEXIST
+        from os import makedirs,path
+
+        try:
+            makedirs(mypath)
+        except OSError as exc: # Python >2.5
+            if exc.errno == EEXIST and path.isdir(mypath):
+                pass
+            else: raise

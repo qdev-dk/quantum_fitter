@@ -673,7 +673,7 @@ def avg_plot(path, mode='T1', figsize=(8, 6), mask=False):
         'fig_size': figsize,
     }, x=0)
 
-def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figsize=(8, 6), mask=False):
+def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figsize=(8, 6), mask=False, entry_mask=[], hist=False):
     """Take a dataset and cal the decay (T1 or T2). Returns a plot of the decays.
 
     Args:
@@ -699,62 +699,63 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
     entry_0 = file.getEntry(entry=0)['timestamp']/60
     
     for i in range(file.getNumberOfEntries()):
-        X, y = file.getTraceXY(entry = i)
-        
-        entry = file.getEntry(entry=i)
-        time_i = entry['timestamp']/60 - entry_0
-        time_array.append(time_i)
-  
-        # rescaling units
-        X *= 1e6
-        y *= 1e6
-        
-        angle = sof.calcRotationAngle(y) #find angle in radians to rotate data by
-        y = np.real(np.exp(1j*angle)*y)
-         
-        if mask != False:
-            mask_ = (X < mask[0]) | (X > mask[1])
-            X = X[mask_]
-            y = y[mask_]
-             
-        if mode == 'T1':
-            fit_type = r'$A \times exp(-x/T) + c}$'
+        if i not in entry_mask:
+            X, y = file.getTraceXY(entry = i)
             
-            t2 = qf.QFit(X, y, model=Model(exp_func))
-            t2.set_params('T', 100)
-            t2.set_params('A', 100)
-            t2.set_params('c', 100)
-            
-        if mode == 'T2':
-            fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
-           
-            a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
-            
-            # fitting
-            t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
-            t2.set_params('T', T)
-            t2.set_params('A', a)
-            t2.set_params('c', c)
-            t2.set_params('omega', w)
-            t2.set_params('phi', p)
-        
-        t2.do_fit()
-        
-        # plotting i entry
-        if plot_i == True or i in plot_i:
-            t2.pretty_print(plot_settings = {
-                'x_label': 'Sequence duration (\u03BCs)',
-                'y_label': r'$V_{H}$' ' (\u03BCV)',
-                'plot_title': f'{filename}, Repetition: {i}',
-                'fit_type': fit_type,
-                'fit_color': 'C4',
-                'fig_size': figsize,
-            }, x=0)
-                
-        t2_error.append(t2.err_params('T'))
-        t2_array.append(t2.fit_params('T'))
-        rep.append(i+1)
+            entry = file.getEntry(entry=i)
+            time_i = entry['timestamp']/60 - entry_0
+            time_array.append(time_i)
     
+            # rescaling units
+            X *= 1e6
+            y *= 1e6
+            
+            angle = sof.calcRotationAngle(y) #find angle in radians to rotate data by
+            y = np.real(np.exp(1j*angle)*y)
+            
+            if mask != False:
+                mask_ = (X < mask[0]) | (X > mask[1])
+                X = X[mask_]
+                y = y[mask_]
+                
+            if mode == 'T1':
+                fit_type = r'$A \times exp(-x/T) + c}$'
+                
+                t2 = qf.QFit(X, y, model=Model(exp_func))
+                t2.set_params('T', 10)
+                t2.set_params('A', 10)
+                t2.set_params('c', 10)
+                
+            if mode == 'T2':
+                fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
+            
+                a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
+                
+                # fitting
+                t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
+                t2.set_params('T', T)
+                t2.set_params('A', a)
+                t2.set_params('c', c)
+                t2.set_params('omega', w)
+                t2.set_params('phi', p)
+            
+            t2.do_fit()
+            
+            # plotting i entry
+            if plot_i == True or i in plot_i:
+                t2.pretty_print(plot_settings = {
+                    'x_label': 'Sequence duration (\u03BCs)',
+                    'y_label': r'$V_{H}$' ' (\u03BCV)',
+                    'plot_title': f'{filename}, Repetition: {i}',
+                    'fit_type': fit_type,
+                    'fit_color': 'C4',
+                    'fig_size': figsize,
+                }, x=0)
+                    
+            t2_error.append(t2.err_params('T'))
+            t2_array.append(t2.fit_params('T'))
+            rep.append(i+1)
+       
     mean, error, chi2, chi2_prob = weighted_mean(t2_array,t2_error)
     #print(mean,'\u00B1', error)
     
@@ -777,4 +778,16 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
     plt.title(f'{filename}\nFit type: {fit_type}')
     #plt.tight_layout()
     plt.show()
+    
+    if hist != False:
+        bins = int(np.sqrt(np.sum(t2_array)))
+        
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_xlabel(f"{mode} decay (\u03BCs) [{bins} bins]"), ax.set_ylabel("Counts")
+        
+        ax.hist(t2_array, bins=bins)
+        
+        plt.title(f'{filename}\nFit type: {fit_type}')
+        plt.show()
+
 

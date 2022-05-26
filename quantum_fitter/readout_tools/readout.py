@@ -8,7 +8,7 @@ mpl.rcParams['figure.dpi']= 800
 class Readout(Plotting):
     """This class contains simple but effective functions functions.
     """
-    def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, labels=None, 
+    def __init__(self, filePath=None, fileName=None, channelName=None, entries=None, state_entries=None, labels=None, 
                  size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6), 
                  alpha=0.7, data=None):
         """Initializes the class and sits figure size an alpha val.
@@ -27,7 +27,7 @@ class Readout(Plotting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         """
-        super().__init__(filePath, channelName, entries, state_entries, labels, size, scalar, pca, 
+        super().__init__(filePath, fileName, channelName, entries, state_entries, labels, size, scalar, pca, 
                          cv_params, verbose, kfolds, figsize, alpha, data)
         
     def cal_expectation_values(self, X=None, size=None, state=1):
@@ -247,5 +247,6 @@ def reformate(X):
     for i in range(len(X)):
         h5data_reformated.append(np.column_stack((X[i].real, X[i].imag)))
     return np.array(h5data_reformated)
+
 
 

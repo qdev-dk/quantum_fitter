@@ -5,7 +5,7 @@ import numpy as np
 class DataImport:
     """This class contains all importing and reformatting functions. Furthermore it controls the data size used and the import and export of classifiers.
     """
-    def __init__(self, filePath=None, channelName=None, entries=None, state_entries=None, 
+    def __init__(self, filePath=None, fileName=None, channelName=None, entries=None, state_entries=None, 
                  labels=None, size=None, kfolds=10, data=None):
         """Initializes a instance of the class. If no entries are given it defines the best entries for classification from the mean. 
 
@@ -19,6 +19,12 @@ class DataImport:
         """
         
         self._filePath = filePath
+        
+        if fileName == None:
+            self._fileName = self._get_file_name_from_path(self._filePath)
+        else:
+            self._fileName = fileName
+            
         self._data = np.array(data)
         
         if self._filePath != None:
@@ -42,7 +48,7 @@ class DataImport:
                 self.state_entries = self.data_mean[1]
                 
                 
-        self.set_states(data=data, state_entries=entries, labels=labels)  
+        self.set_states(state_entries=entries, labels=labels)  
             
     def set_data(self, channelName=None, state_entries=None, channelName_log='Pulse Generator - Amplitude', unit_log='V'):
         """Selects the data set which is gonna be used in the further calculations.
@@ -71,7 +77,7 @@ class DataImport:
                 self.h5data_log = self.h5data_index
     
              
-    def set_states(self, data=None, state_entries=None, labels=None, offset=None):
+    def set_states(self, state_entries=None, labels=None, offset=None):
         """Sets the entries of the "cleanest" states of the data set to be used in further calculations.
 
         Args:
