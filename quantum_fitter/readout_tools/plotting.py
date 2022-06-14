@@ -1,17 +1,34 @@
+import matplotlib.ticker
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
+import matplotlib.ticker as ticker
 from .fitting import *
-
 
 
 class Plotting(Fitting):
     """This class contains all plotting functions.
     """
-    def __init__(self, filePath=None, fileName=None, channelName=None, entries=None, state_entries=None, labels=None, 
-                 size=None, scalar=True, pca=True, cv_params=None, verbose=1, kfolds=10, figsize=(10, 6),
-                 alpha=0.70, data=None):
+
+    def __init__(
+        self,
+        filePath=None,
+        fileName=None,
+        channelName=None,
+        entries=None,
+        state_entries=None,
+        labels=None,
+        size=None,
+        scalar=True,
+        pca=True,
+        cv_params=None,
+        verbose=1,
+        kfolds=10,
+        figsize=(10, 6),
+        alpha=0.70,
+        data=None,
+    ):
         """Initializes the class and sits figure size an alpha val.
 
         Args:
@@ -28,12 +45,28 @@ class Plotting(Fitting):
             figsize (tuple, optional): The size of the figure. Defaults to (10, 6).
             alpha (float, optional): Transparency value of beta points. Float between [0,1]. Defaults to 0.70.
         """
-        super().__init__(filePath, fileName, channelName, entries, state_entries, labels, size, scalar, pca, cv_params, verbose, kfolds, data)
+        super().__init__(
+            filePath,
+            fileName,
+            channelName,
+            entries,
+            state_entries,
+            labels,
+            size,
+            scalar,
+            pca,
+            cv_params,
+            verbose,
+            kfolds,
+            data,
+        )
 
         self.figsize = figsize
         self.alpha = alpha
-    
-    def _plot_classifier_decision_function(self, resolution=350, ax=None, plot_support=True):
+
+    def _plot_classifier_decision_function(
+        self, resolution=350, ax=None, plot_support=True
+    ):
         """Plots the decision function for a 2D decision function
 
         Args:
@@ -50,50 +83,73 @@ class Plotting(Fitting):
         x = np.linspace(xlim[0], xlim[1], resolution)
         y = np.linspace(ylim[0], ylim[1], resolution)
         Y, X = np.meshgrid(y, x)
-        xy = np.c_[X.ravel(), Y.ravel()]    #xy = np.array([X.ravel(), Y.ravel()]).T
+        # xy = np.array([X.ravel(), Y.ravel()]).T
+        xy = np.c_[X.ravel(), Y.ravel()]
 
         self._try_fit()
-        
-        if ((hasattr(self.cv_search, 'decision_function')) and (len(self._states_labels) < 3)):
+
+        if (hasattr(self.cv_search, "decision_function")) and (
+            len(self._states_labels) < 3
+        ):
             P = self.cv_search.decision_function(xy)
         else:
             P = self.cv_search.predict(xy)
 
         self.decision_function = P.reshape(X.shape)
 
-        if ((hasattr(self.cv_search, 'decision_function')) and (len(self._states_labels) < 3)):
+        if (hasattr(self.cv_search, "decision_function")) and (
+            len(self._states_labels) < 3
+        ):
             levels = [-1, 0, 1]
-            linestyles = ['--', '-', '--']
+            linestyles = ["--", "-", "--"]
         else:
             list, j = [], 0
             for i in range(len(self.state_entries)):
-                num = i-j
+                num = i - j
                 if (i % 2) == 0:
-                    list.append(0.5 + num*0.5)
+                    list.append(0.5 + num * 0.5)
                 else:
                     j += 1
-                    list.append(0.5 - num*0.5)
-               
-            levels = list.sort()
-            linestyles = ['-'] * len(self.state_entries)
+                    list.append(0.5 - num * 0.5)
 
-        ax.contour(X, Y, self.decision_function, colors='k',
-                   alpha=0.5, levels=levels,
-                   linestyles=linestyles)
+            levels = list.sort()
+            linestyles = ["-"] * len(self.state_entries)
+
+        ax.contour(
+            X,
+            Y,
+            self.decision_function,
+            colors="k",
+            alpha=0.5,
+            levels=levels,
+            linestyles=linestyles,
+        )
 
         # plot support vectors
-        if hasattr(self.cv_search, 'support_vectors_'):
+        if hasattr(self.cv_search, "support_vectors_"):
             if plot_support:
-                ax.scatter(self.cv_search.support_vectors_[:, 0],
-                           self.cv_search.support_vectors_[:, 1],
-                           s=300,
-                           alpha=0.7, linewidth=1,
-                           facecolors='None', edgecolors="k")
+                ax.scatter(
+                    self.cv_search.support_vectors_[:, 0],
+                    self.cv_search.support_vectors_[:, 1],
+                    s=300,
+                    alpha=0.7,
+                    linewidth=1,
+                    facecolors="None",
+                    edgecolors="k",
+                )
 
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-    
-    def plot_classifier(self, X=None, y=None, sample_weight=None, class_plot=True, save_fig=False, title=None):
+
+    def plot_classifier(
+        self,
+        X=None,
+        y=None,
+        sample_weight=None,
+        class_plot=True,
+        save_fig=False,
+        title=None,
+    ):
         """Plotting fuction for SVM fits
 
         Args:
@@ -111,35 +167,49 @@ class Plotting(Fitting):
 
         if X is None:
             X = np.array(self.X_train)
-            
+
         if y is None:
             y = np.array(self.y_train)
-        
+
         if isinstance(sample_weight, int) == False:
             sample_weight = self.weights
-        
-        for i in np.unique(y):   
-            plt.scatter(X[:, 0][y==i], X[:, 1][y==i], s=50 * sample_weight[y==i], alpha=self.alpha, cmap='Spectral', label=f'State {int(i)}')
-        
+
+        for i in np.unique(y):
+            plt.scatter(
+                X[:, 0][y == i],
+                X[:, 1][y == i],
+                s=25,
+                alpha=self.alpha,
+                cmap="Spectral",
+                label=f"State {int(i)}",
+            )  # 50 * sample_weight[y==i]
+
         if class_plot == True:
             self._plot_classifier_decision_function()
 
-        ax.set_xlabel("I [V]"), ax.set_ylabel("Q [V]")
-        
+        ax.set_xlabel("I [mV]"), ax.set_ylabel("Q [mV]")
+
+        scale = 1e-3
+
+        ticks_x = ticker.FuncFormatter(lambda x, pos: "{0:g}".format(x / scale))
+        ax.xaxis.set_major_formatter(ticks_x)
+        ticks_y = ticker.FuncFormatter(lambda x, pos: "{0:g}".format(x / scale))
+        ax.yaxis.set_major_formatter(ticks_y)
+
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._fileName
-        
-        ax.set_title(f'Classifiter training plot, kernel: {kernel}\n' + title)
-        
+
+        if title != "":
+            ax.set_title(f"Classifiter training plot, kernel: {kernel}\n" + title)
+
         plt.legend()
-        
+
         self.savefigure("classifier_plot", save_fig)
         plt.show()
-        
+
         return ax
- 
- 
+
     def plot_testing(self, X=None, save_fig=False, title=None, size=None):
         """A function for plotting the testing of a dataset.
 
@@ -151,39 +221,54 @@ class Plotting(Fitting):
         Returns:
             ax (object): The figure object
         """
-    
+
         if X is None:
             X = self.X_test
-        
+
         if size:
             X = X[:size]
-            
+
         predcition = np.array(self.cv_search.predict(X))
         unique, counts = np.unique(predcition, return_counts=True)
 
         fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
-        for i, j in enumerate(unique):   
-            procent = counts[i]/len(X)
+        for i, j in enumerate(unique):
+            procent = counts[i] / len(X)
             text = f"State {int(j)}, {procent*100:.3}%"
-            
-            plt.scatter(X[:, 0][predcition==i], X[:, 1][predcition==i], s=25, alpha=self.alpha, cmap='Spectral', label=text)
-        
+
+            plt.scatter(
+                X[:, 0][predcition == i],
+                X[:, 1][predcition == i],
+                s=25,
+                alpha=self.alpha,
+                cmap="Spectral",
+                label=text,
+            )
+
         self._plot_classifier_decision_function(plot_support=False)
 
-        ax.set_xlabel("I [V]"), ax.set_ylabel("Q [V]")
-        
+        ax.set_xlabel("I [mV]"), ax.set_ylabel("Q [mV]")
+
+        scale = 1e-3
+
+        ticks_x = ticker.FuncFormatter(lambda x, pos: "{0:g}".format(x / scale))
+        ax.xaxis.set_major_formatter(ticks_x)
+        ticks_y = ticker.FuncFormatter(lambda x, pos: "{0:g}".format(x / scale))
+        ax.yaxis.set_major_formatter(ticks_y)
+
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._fileName
-        
-        ax.set_title(f'Classifiter testing plot, kernel: {kernel}\n' + title )
-        
+
+        if title != "":
+            ax.set_title(f"Classifiter testing plot, kernel: {kernel}\n" + title)
+
         plt.legend()
 
         self.savefigure("testing_plot", save_fig)
         return ax
-    
+
     def plot_ROC(self, X=None, y=None, save_fig=False, title=None):
         """Make ROC plots of FPR / TP.
 
@@ -197,36 +282,34 @@ class Plotting(Fitting):
             ax (object): The figure object
         """
         from sklearn.metrics import roc_curve, auc
-        
+
         fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
-        
+
         if X is None:
             X = self.X_test
-            
+
         if y is None:
             y = self.y_test
-        
+
         # compute y prediction probabilities:
         y_predicted_proba = self.cv_search.predict_proba(X)
-        
+
         n_classes = y_predicted_proba.shape[1]
-        
+
         FPR_list, TPR_list, y_list, y_predicted_proba_list = [], [], [], []
         for i in range(n_classes):
             y_i = np.where((y == i), 1, 0)
-            
+
             # Compute ROC curve and ROC area
             FPR, TPR, _ = roc_curve(y_i, y_predicted_proba[:, i])
             roc_auc = auc(FPR, TPR)
 
             FPR_list.append(FPR), TPR_list.append(TPR)
             y_list.append(y_i), y_predicted_proba_list.append(y_predicted_proba[:, i])
-            
+
             # plot the ROC curve
-            ax.plot(FPR, TPR, label=f'ROC curve state {i} (area = %0.3f)' % roc_auc)
-            
-            
-            
+            ax.plot(FPR, TPR, label=f"ROC curve state {i} (area = %0.3f)" % roc_auc)
+
         # First aggregate all false positive rates
         all_fpr = np.unique(np.concatenate(FPR_list))
 
@@ -240,34 +323,52 @@ class Plotting(Fitting):
 
         FPR_macro = all_fpr
         TPR_macro = mean_tpr
-        roc_auc_macro = auc(FPR_macro, TPR_macro)   
-                    
+        roc_auc_macro = auc(FPR_macro, TPR_macro)
+
         # plot the macro ROC curve
-        ax.plot(FPR_macro, TPR_macro, label=f'macro-average ROC curve (area = %0.3f)' % roc_auc_macro, linestyle="--")
-             
+        ax.plot(
+            FPR_macro,
+            TPR_macro,
+            label=f"macro-average ROC curve (area = %0.3f)" % roc_auc_macro,
+            linestyle="--",
+        )
+
         # plot the micro ROC curve
-        FPR_micro, TPR_micro, _ = roc_curve(np.array(y_list).flatten(), np.array(y_predicted_proba_list).flatten())
-        #FPR_micro, TPR_micro = np.array(FPR_list).flatten(), np.array(TPR_list).flatten()
-        roc_auc_micro = auc(FPR_micro, TPR_micro)  
-        
-        ax.plot(FPR_micro, TPR_micro, label=f'micro-average ROC curve (area = %0.3f)' % roc_auc_micro, linestyle="--")
-          
-            
-            
-        ax.plot([0, 1], [0, 1], linestyle='--')
-        ax.set(xlim=[-0.01, 1.0], ylim=[-0.01, 1.05], xlabel='False Positive Rate', ylabel='True Positive Rate')
+        FPR_micro, TPR_micro, _ = roc_curve(
+            np.array(y_list).flatten(), np.array(y_predicted_proba_list).flatten()
+        )
+        # FPR_micro, TPR_micro = np.array(FPR_list).flatten(), np.array(TPR_list).flatten()
+        roc_auc_micro = auc(FPR_micro, TPR_micro)
+
+        ax.plot(
+            FPR_micro,
+            TPR_micro,
+            label=f"micro-average ROC curve (area = %0.3f)" % roc_auc_micro,
+            linestyle="--",
+        )
+
+        ax.plot([0, 1], [0, 1], linestyle="--")
+        ax.set(
+            xlim=[-0.01, 1.0],
+            ylim=[-0.01, 1.05],
+            xlabel="False Positive Rate",
+            ylabel="True Positive Rate",
+        )
         ax.legend(loc="lower right")
-        
+
         if title == None:
             kernel = self.cv_search.best_estimator_[-1].kernel
             title = self._fileName
-        
-        ax.set_title(f'ROC plot, kernel: {kernel}\n' + title )
-        
+
+        if title != "":
+            ax.set_title(f"ROC plot, kernel: {kernel}\n" + title)
+
         self.savefigure("roc_plot", save_fig)
         return ax
-    
-    def plot_cv_iterations(self, score_value="mean_test_score", save_fig=False, title=None):
+
+    def plot_cv_iterations(
+        self, score_value="mean_test_score", save_fig=False, title=None
+    ):
         """The function the plots the performance of each iteration of cross validation.
 
         Args:
@@ -281,9 +382,13 @@ class Plotting(Fitting):
         results = pd.DataFrame(self.cv_search.cv_results_)
         results["params_str"] = results.params.apply(str)
         results.drop_duplicates(subset=("params_str", "iter"), inplace=True)
-        
-        mean_scores = results.pivot(index="iter", columns="params_str", values=score_value)
-        ax = mean_scores.plot(legend=False, alpha=0.6, figsize=np.array(self.figsize)*1.5)
+
+        mean_scores = results.pivot(
+            index="iter", columns="params_str", values=score_value
+        )
+        ax = mean_scores.plot(
+            legend=False, alpha=0.6, figsize=np.array(self.figsize) * 1.5
+        )
 
         labels = [
             f"iter={i}\nn_samples={self.cv_search.n_resources_[i]}\nn_candidates={self.cv_search.n_candidates_[i]}"
@@ -292,23 +397,37 @@ class Plotting(Fitting):
 
         ax.set_xticks(range(self.cv_search.n_iterations_))
         ax.set_xticklabels(labels, rotation=45, multialignment="left")
-        ax.set_title("Scores of candidates over iterations")
-        
+        if title != "":
+            ax.set_title("Scores of candidates over iterations")
+
         if title == None:
             title = self._fileName
         kernel = self.cv_search.best_estimator_[-1].kernel
-        
-        ax.set_title(f'Scores of candidates over iterations, kernel: {kernel} \n' + title)
-        
-        ax.set_ylabel(score_value.replace("_"," "))
+
+        if title != "":
+            ax.set_title(
+                f"Scores of candidates over iterations, kernel: {kernel} \n" + title
+            )
+
+        ax.set_ylabel(score_value.replace("_", " "))
         ax.set_xlabel("iterations")
-        
+
         plt.tight_layout()
-        
+
         self.savefigure("cv_iterations", save_fig)
         return ax
-    
-    def plot_oscillation(self, x=None, y=None, X=None, size=None, mode='probability', title=None, state=1, save_fig=False):
+
+    def plot_oscillation(
+        self,
+        x=None,
+        y=None,
+        X=None,
+        size=None,
+        mode="probability",
+        title=None,
+        state=1,
+        save_fig=False,
+    ):
         """Function for oscillation plot. For more information to see example "quick_run".
 
         Args:
@@ -325,56 +444,73 @@ class Plotting(Fitting):
         """
         if title == None:
             title = self._fileName
-            
+
         if size == None:
             size = self._int_states.shape[1]
 
-        if hasattr(self, '_osc_state') == False:
+        if hasattr(self, "_osc_state") == False:
             self._osc_state = None
-        
-        if hasattr(self, 'expectation_values') == False or size != self.size or self._osc_state != state:
+
+        if (
+            hasattr(self, "expectation_values") == False
+            or size != self.size
+            or self._osc_state != state
+        ):
             self.cal_expectation_values(X, size, state=state)
 
         self._osc_state = state
-       
+
         fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
         if y is None:
-            if mode == 'expectation':
+            if mode == "expectation":
                 y = self.expectation_values
-                ax.set_ylabel('Expetaction Value')
-                
-            if mode == 'probability':
+                ax.set_ylabel("Expetaction Value")
+
+            if mode == "probability":
                 y = self.probability_values
-                if self._osc_state == 'all':
-                    ax.set_ylabel(f'Probability')
+                if self._osc_state == "all":
+                    ax.set_ylabel(f"Probability")
                 else:
-                    ax.set_ylabel(f'Probability of state {int(self._osc_state)}')
-        
-        for i, key in enumerate(y.keys()): 
+                    ax.set_ylabel(f"Probability of state {int(self._osc_state)}")
+
+        for i, key in enumerate(y.keys()):
             if x is None:
                 try:
                     x = range(X.shape[0])
                 except:
-                    x = self.h5data_log['axis']
-                                
-            if mode == 'probability' and self._osc_state == 'all':
+                    x = self.h5data_log["axis"]
+
+            if mode == "probability" and self._osc_state == "all":
                 y = np.array(self.probability_values[key])
                 for j in range(y.shape[1]):
-                    self.do_fit_oscillation(x=x, y=y[:,j], label=key + f', state {j}', ax=ax, color=list(mcolors.TABLEAU_COLORS.values())[j])
+                    self.do_fit_oscillation(
+                        x=x,
+                        y=y[:, j],
+                        label=key + f", state {j}",
+                        ax=ax,
+                        color=list(mcolors.TABLEAU_COLORS.values())[j],
+                    )
             else:
-                self.do_fit_oscillation(x=x, y=y[key], label=key, ax=ax, color=list(mcolors.TABLEAU_COLORS.values())[i])
-        
-        ax.set_xlabel(self.h5data_log['name'])
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        
-        fit_type = r'$A \times sin(\omega x + \varphi) + c$'
-        ax.set_title(title + '\n Fit type: ' + fit_type)
-        
+                self.do_fit_oscillation(
+                    x=x,
+                    y=y[key],
+                    label=key,
+                    ax=ax,
+                    color=list(mcolors.TABLEAU_COLORS.values())[i],
+                )
+
+        ax.set_xlabel(self.h5data_log["name"])
+        ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
+        fit_type = r"$A \times sin(\omega x + \varphi) + c$"
+        if title != "":
+            ax.set_title(title + "\n Fit type: " + fit_type)
+
         self.savefigure("oscillation", save_fig)
-        
+
         return ax
-     
+
     def plot_param_effect(self, plot_dir=None, title=None, save_fig=False):
         """A function for plotting the effects on a score of a parameter.
 
@@ -389,65 +525,88 @@ class Plotting(Fitting):
             try:
                 plot_dir = self._plot_dir
             except:
-                print('self._plot_dir is not defined. Define using self.set_plot_dir()')
-        
+                print("self._plot_dir is not defined. Define using self.set_plot_dir()")
+
         try:
-            std = np.array(plot_dir['score_std']) / 2
+            std = np.array(plot_dir["score_std"]) / 2
         except:
             std = None
-        
+
         fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
-        
-        ax.errorbar(plot_dir['param_value'], plot_dir['score_value'], yerr=std)
-      
-    
+
+        ax.errorbar(plot_dir["param_value"], plot_dir["score_value"], yerr=std)
+
         if title == None:
             title = self._fileName
-        
-        ax.set_title(f'Scores of candidates over parameter\n' + title)
-        
-        ax.set_ylabel(plot_dir['score_name'].replace("_"," "))
-        ax.set_xlabel(plot_dir['param_name'].replace("_"," "))
-        
-        
-        self.savefigure("param_effect" + " " + plot_dir['param_name'].replace("_"," "), save_fig)
-        
+
+        if title != "":
+            ax.set_title(f"Scores of candidates over parameter\n" + title)
+
+        ax.set_ylabel(plot_dir["score_name"].replace("_", " "))
+        ax.set_xlabel(plot_dir["param_name"].replace("_", " "))
+
+        self.savefigure(
+            "param_effect" + " " + plot_dir["param_name"].replace("_", " "), save_fig
+        )
+
         return ax
-    
+
     def plot_temp(self, save_fig=False, title=None, size=None):
         self.calculate_temp()
-        
+
         if title == None:
             title_ = self._fileName
         kernel_ = self.cv_search.best_estimator_[-1].kernel
 
         ax = self.plot_testing(X=self.h5data[0], save_fig=False, title=title, size=size)
-        ax.set_title(f'Classifiter temperature plot, kernel: {kernel_}\n' + f'Qbit temperature: {(self.temp_list[-1]*1000):.3} mK\n' + title_ )
-        
+        if title != "":
+            ax.set_title(
+                f"Classifiter temperature plot, kernel: {kernel_}\n"
+                + f"Qbit temperature: {(self.temp_list[-1]*1000):.3} mK\n"
+                + title_
+            )
+
         self.savefigure("temp", save_fig)
-    
+
         return ax
-    
-    
+
     def savefigure(self, title, save_fig=False):
         if save_fig == True:
-            path = "plots/{}".format(self._fileName.replace('.hdf5',''))
-            filename = title + ', ' + self._fileName.replace('.hdf5','') + '.svg'
-            
-            self.mkdir_p(path) #try to make folder
-            
-            plt.savefig(f"{path}/{filename}", format='svg')
- 
-    
+            path = "plots/{}".format(self._fileName.replace(".hdf5", ""))
+            filename = title + ", " + self._fileName.replace(".hdf5", "") + ".svg"
+
+            self.mkdir_p(path)  # try to make folder
+
+            plt.savefig(f"{path}/{filename}", format="svg")
+
     def mkdir_p(self, mypath):
-        '''Creates a directory. equivalent to using mkdir -p on the command line'''
+        """Creates a directory. equivalent to using mkdir -p on the command line"""
 
         from errno import EEXIST
-        from os import makedirs,path
+        from os import makedirs, path
 
         try:
             makedirs(mypath)
-        except OSError as exc: # Python >2.5
+        except OSError as exc:  # Python >2.5
             if exc.errno == EEXIST and path.isdir(mypath):
                 pass
-            else: raise
+            else:
+                raise
+
+
+class OOMFormatter(matplotlib.ticker.ScalarFormatter):
+    def __init__(self, order=0, fformat="%1.3f", offset=True, mathText=True):
+        self.oom = order
+        self.fformat = fformat
+        matplotlib.ticker.ScalarFormatter.__init__(
+            self, useOffset=offset, useMathText=mathText
+        )
+
+    def _set_order_of_magnitude(self):
+        self.orderOfMagnitude = self.oom
+
+    def _set_format(self, vmin=None, vmax=None):
+        self.format = self.fformat
+        if self._useMathText:
+            self.format = r"$\mathdefault{%s}$" % self.format
+

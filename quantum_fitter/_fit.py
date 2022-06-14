@@ -546,18 +546,29 @@ def str_none_if_none(stderr):
 
 
   
+  
 def oddfun_damped_oscillations_guess(x, y):
     # Adapted from QDev wrappers, `qdev_fitter`
     from scipy import fftpack
-    a = y.max() - y.min()
+    a = (y.max() - y.min())/2
     c = y.mean()
     T = x[round(len(x)/2)]
     yhat = fftpack.rfft(y-y.mean())
     idx = (yhat**2).argmax()
     freqs = fftpack.rfftfreq(len(x), d = (x[1]-x[0])/(2*np.pi))
     w = freqs[idx]
-    p = 0
 
+    dx = x[1] - x[0]
+    indices_per_period = np.pi*2/w/dx
+    std_window = round(indices_per_period)
+    initial_std = np.std(y[:std_window])
+    noise_level = np.std(y[-2*std_window:]) 
+    for i in range(1, len(x) - std_window):
+        std = np.std(y[i:i + std_window])
+        if std  < (initial_std - noise_level)*np.exp(-1):
+            T = x[i]
+            break
+    p = 0
     return [a, T, w, p, c]
 
 def oddfun_damped_oscillations(x, A, T, omega, phi, c):
@@ -585,6 +596,13 @@ def weighted_mean(data, errors):
         Chi2_prob (float): Chi2 Probability of the array
     """
     
+    data = np.array(data)
+    errors = np.array(errors)
+    data = data[errors != None]
+    errors = errors[errors != None]
+
+
+
     weight = 0
     for i in errors:
         if i == 0:
@@ -597,7 +615,10 @@ def weighted_mean(data, errors):
 
     mean_weighted = 0
     for i in range(len(data)):
-        mean_weighted += (float(data[i])*(1/float(errors[i]))**2)/weight
+        try:
+            mean_weighted += (float(data[i])*(1/float(errors[i]))**2)/weight
+        except:
+            pass
 
     err_weighted = np.sqrt(1/weight)
     
@@ -673,7 +694,7 @@ def avg_plot(path, mode='T1', figsize=(8, 6), mask=False):
         'fig_size': figsize,
     }, x=0)
 
-def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figsize=(8, 6), mask=False, entry_mask=[], hist=False):
+def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figsize=(8, 6), mask=False, entry_mask=[], plot_hist=False):
     """Take a dataset and cal the decay (T1 or T2). Returns a plot of the decays.
 
     Args:
@@ -681,14 +702,15 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
         plot_i (list, optional): The number of subplots you want to plot. Defaults to [].
         mode (str, optional): Can be 'T1' or 'T2'. Defaults to 'T1'.
         plot_mean (bool, optional): Plots mean and error, if True. Defaults to True.
-        test_time (_type_, optional): Plots one a timescale if True. Defaults to None.
+        time_axis (_type_, optional): Plots one a timescale if True. Defaults to None.
         figsize (tuple, optional): The size of the plot. Defaults to (8, 6).
         mask (bool, optional): The range of datapoints to remove. If False all datapoints are used. Defaults to False.
     """
     import quantum_fitter as qf
     import Labber as lab
     import quantum_fitter.standard_operating_functions as sof
-    
+    from tqdm import tqdm 
+
     file = lab.LogFile(path)
     filename =  qf.get_file_name_from_path(path)
     
@@ -698,7 +720,7 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
     rep, t2_array, t2_error, time_array = [], [], [], []
     entry_0 = file.getEntry(entry=0)['timestamp']/60
     
-    for i in range(file.getNumberOfEntries()):
+    for i in tqdm(range(file.getNumberOfEntries())):
         if i not in entry_mask:
             X, y = file.getTraceXY(entry = i)
             
@@ -720,11 +742,19 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
                 
             if mode == 'T1':
                 fit_type = r'$A \times exp(-x/T) + c}$'
+
+                baseline = np.mean(y[-int(0.1*len(y)):-1])
+                top = np.mean(y[0:int(0.1*len(y))])
+                t1_est = X[np.abs(y - top/2).argmin()]
+
+                print(baseline)
+                print(top-baseline)
+                print(t1_est)
                 
                 t2 = qf.QFit(X, y, model=Model(exp_func))
-                t2.set_params('T', 10)
-                t2.set_params('A', 10)
-                t2.set_params('c', 10)
+                t2.set_params('T', t1_est)
+                t2.set_params('A', top-baseline)
+                t2.set_params('c', baseline)
                 
             if mode == 'T2':
                 fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
@@ -755,31 +785,48 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, test_time=None, figs
             t2_error.append(t2.err_params('T'))
             t2_array.append(t2.fit_params('T'))
             rep.append(i+1)
-       
-    mean, error, chi2, chi2_prob = weighted_mean(t2_array,t2_error)
+
+
+    mean, error, chi2, chi2_prob = weighted_mean(t2_array, t2_error)
     #print(mean,'\u00B1', error)
     
     fig, ax = plt.subplots(figsize=figsize)
     ax.set_xlabel("Repetitions"), ax.set_ylabel(f"{mode} decay (\u03BCs)")
 
     # plot final
-    if test_time != None:
+    if time_axis != None:
         rep = time_array
         ax.set_xlabel("Time (min)")
+
+    t2_array = np.array(t2_array)
+    t2_error = np.array(t2_error)
+    rep = np.array(rep)
+
+    good_indices = t2_error != None
+    rep_good = rep[good_indices]
+    t2_array_good = t2_array[good_indices]
+    t2_error_good = t2_error[good_indices]
+
+    good_indices = abs(t2_error_good/t2_array_good) < 1
+    rep_good = rep_good[good_indices]
+    t2_array_good = t2_array_good[good_indices]
+    t2_error_good = t2_error_good[good_indices]   
+
+
+    plt.errorbar(rep_good, t2_array_good, t2_error_good, fmt='.', color = 'red', ecolor = 'grey')
     
-    plt.errorbar(rep, t2_array, t2_error, fmt='.', color = 'red', ecolor = 'grey')
-    
-    if plot_mean == True:
+    if plot_mean:
         plt.axhline(y=mean, color='r', linestyle='-', label=f'weighted mean: {mean:.3} \u00B1 {error:.2}')
         plt.axhline(y=mean+error, color='grey', linestyle='--')
         plt.axhline(y=mean-error, color='grey', linestyle='--')
-        
+
+    plt.ylim([0, np.max(mean)*2])    
     plt.legend()
     plt.title(f'{filename}\nFit type: {fit_type}')
     #plt.tight_layout()
     plt.show()
     
-    if hist != False:
+    if plot_hist:
         bins = int(np.sqrt(np.sum(t2_array)))
         
         fig, ax = plt.subplots(figsize=figsize)
