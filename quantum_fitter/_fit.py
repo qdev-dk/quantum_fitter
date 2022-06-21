@@ -694,7 +694,8 @@ def avg_plot(path, mode='T1', figsize=(8, 6), mask=False):
         'fig_size': figsize,
     }, x=0)
 
-def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figsize=(8, 6), mask=False, entry_mask=[], plot_hist=False):
+def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figsize=(8, 6), mask=False, entry_mask=[], plot_hist=False, 
+                return_object=False, return_freq=False, fit_guess={}, verbose=False, use_phase=False):
     """Take a dataset and cal the decay (T1 or T2). Returns a plot of the decays.
 
     Args:
@@ -717,7 +718,7 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
     if plot_i == False:
         plot_i = []
     
-    rep, t2_array, t2_error, time_array = [], [], [], []
+    rep, t2_array, t2_error, time_array, omega_array, omega_error = [], [], [], [], [], []
     entry_0 = file.getEntry(entry=0)['timestamp']/60
     
     for i in tqdm(range(file.getNumberOfEntries())):
@@ -732,8 +733,11 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
             X *= 1e6
             y *= 1e6
             
-            angle = sof.calcRotationAngle(y) #find angle in radians to rotate data by
-            y = np.real(np.exp(1j*angle)*y)
+            if use_phase:
+                y = np.angle(y)
+            else:
+                angle = sof.calcRotationAngle(y) #find angle in radians to rotate data by
+                y = np.real(np.exp(1j*angle)*y)
             
             if mask != False:
                 mask_ = (X < mask[0]) | (X > mask[1])
@@ -760,7 +764,8 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
                 fit_type = r'$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$'
             
                 a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
-                
+                print(a, T, w, p, c)
+
                 # fitting
                 t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
                 t2.set_params('T', T)
@@ -768,8 +773,10 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
                 t2.set_params('c', c)
                 t2.set_params('omega', w)
                 t2.set_params('phi', p)
+                for param, value in fit_guess.items():
+                    t2.set_params(param, value)
             
-            t2.do_fit()
+            t2.do_fit(verbose=verbose)
             
             # plotting i entry
             if plot_i == True or i in plot_i:
@@ -785,9 +792,10 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
             t2_error.append(t2.err_params('T'))
             t2_array.append(t2.fit_params('T'))
             rep.append(i+1)
+            if mode == 'T2':
+                omega_array.append(t2.fit_params('omega'))
+                omega_error.append(t2.err_params('omega'))
 
-
-    mean, error, chi2, chi2_prob = weighted_mean(t2_array, t2_error)
     #print(mean,'\u00B1', error)
     
     fig, ax = plt.subplots(figsize=figsize)
@@ -812,15 +820,15 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
     t2_array_good = t2_array_good[good_indices]
     t2_error_good = t2_error_good[good_indices]   
 
-
     plt.errorbar(rep_good, t2_array_good, t2_error_good, fmt='.', color = 'red', ecolor = 'grey')
     
     if plot_mean:
+        mean, error, chi2, chi2_prob = weighted_mean(t2_array, t2_error)
         plt.axhline(y=mean, color='r', linestyle='-', label=f'weighted mean: {mean:.3} \u00B1 {error:.2}')
         plt.axhline(y=mean+error, color='grey', linestyle='--')
         plt.axhline(y=mean-error, color='grey', linestyle='--')
-
-    plt.ylim([0, np.max(mean)*2])    
+        plt.ylim([0, np.max(mean)*2])  
+  
     plt.legend()
     plt.title(f'{filename}\nFit type: {fit_type}')
     #plt.tight_layout()
@@ -836,5 +844,12 @@ def multi_entry(path, plot_i=[], mode='T1', plot_mean=True, time_axis=True, figs
         
         plt.title(f'{filename}\nFit type: {fit_type}')
         plt.show()
+    
+    if return_freq:
+        return omega_array, omega_error
+
+    if return_object:
+        return t2
+    
 
 
