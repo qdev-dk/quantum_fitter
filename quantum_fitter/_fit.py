@@ -101,7 +101,7 @@ class QFit:
         
     @property
     def fit_y(self):
-        if not self._fity:
+        if len(self._fity) == 0:
             print('No data y now!')
             return
         return self._fity
