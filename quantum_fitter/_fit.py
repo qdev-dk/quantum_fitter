@@ -317,6 +317,7 @@ class QFit:
             fit_value = self.eval(x=self._fitx)
         else:
             fit_value = self.fit_y
+            self._fitx = self._datax
         fit_params, error_params = self.result.best_values, self._params_stderr()
         _fig_size = (8, 6) if plot_settings is None else plot_settings.get('fig_size', (8, 6))
         self._fig, ax = plt.subplots(1, 1, figsize=_fig_size)
