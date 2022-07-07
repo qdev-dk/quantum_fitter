@@ -344,7 +344,7 @@ class QFit:
             
         ax.legend()
         title = 'Data source not given' if plot_settings is None else plot_settings.get('plot_title', 'no name given')
-        fit_type = plot_settings.fit_type if plot_settings is None else plot_settings.get('fit_type', str(self._qmodel.name))
+        fit_type = str(self._qmodel.name) if plot_settings is None else plot_settings.get('fit_type', str(self._qmodel.name))
         ax.set_title('Datasource: ' + title + '\n Fit type: ' + fit_type)
         # Check if use wants figure and return if needed:
         if plot_settings is None or plot_settings.get('show_fig', None) is None:
