@@ -45,7 +45,9 @@ class QFit:
             if len(model) > 1:
                 for i, m in enumerate(model[1:]):
                     mod = self.makemodel(m)
-                    if m in model[:i]:
+                    print(m)
+                    print(model[:i+1])
+                    if m in model[:i+1]:
                         mod.prefix = f'f{i+2}_'
                     self._qmodel += mod
         else:
