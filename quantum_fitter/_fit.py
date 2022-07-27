@@ -1,3 +1,4 @@
+from typing import Optional
 from lmfit import Model, Minimizer, Parameters, report_fit, models
 import numpy as np
 import matplotlib.pyplot as plt
@@ -354,6 +355,44 @@ class QFit:
 
         if plot_settings is not None and plot_settings.get('return_fig', None) is not None:
             return self._fig, ax
+
+    def my_pretty_print(self, plot_settings=None, nr_x_points=None, title='', **kwargs):
+        '''Basic function for plotting the result of a fit'''
+        fig, ax = plt.subplots(1, 1, figsize=(8, 6), **kwargs)
+        ax = self.plot_data(ax, **kwargs)
+        ax = self.plot_analytic_fit(ax, **kwargs)
+        ax = self.add_fit_and_error_params(ax, **kwargs)
+        ax.legend()
+        fit_type = str(self._qmodel.name)
+        ax.set_title('title' + '\n Fit type: ' + fit_type)
+        plt.show()
+        return fig, ax
+
+    def plot_data(self, ax, data_color='C0', **kwargs):
+        ax.plot(self._datax, self._datay, '.',
+                label='Data', color=data_color, markersize=10, zorder=10)
+        return ax
+
+    def plot_analytic_fit(self, ax, fit_color='gray', nr_x_points=None, **kwargs):
+        x_values, fit_values = self.analytic_values_to_plot(nr_x_points)        
+        ax.plot(x_values, fit_values, '-', linewidth=1, label='Fit', color=fit_color)
+        return ax
+
+    def add_fit_and_error_params(self, ax):
+        fit_params, error_params = self.result.best_values, self._params_stderr()
+        for key in fit_params.keys():
+            ax.plot(self._datax[0], self._datay[0], 'o', markersize=0,
+                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
+        return ax
+
+    def analytic_values_to_plot(self, nr_x_points: Optional[int] = None):
+        if nr_x_points:
+            x_values = np.linspace(min(self._datax), max(self._datax), nr_x_points)
+            fit_values = self.eval(x=x_values)
+        else:
+            fit_values = self.fit_y
+            x_values = self._datax
+            return x_values, fit_values
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=''):
         angle = np.exp(-1j*(self._datax*self.result.params['phi1']+self.result.params['phi2']))
