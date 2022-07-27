@@ -334,7 +334,7 @@ class QFit:
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
             ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
-                    label='{}: {:4.4}±{:4.4}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
+                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
         # Rescale plot if user wants it:
         if plot_settings is not None:
             ax.set_xlabel(plot_settings.get('x_label', 'x_label not set'))
