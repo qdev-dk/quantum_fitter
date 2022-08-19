@@ -200,11 +200,8 @@ class QFit:
 
     def fit_values(self):
         return self.result.best_fit
-        
-    def fit_residuals(self):
-        return self.result.fit_residuals
 
-    def add_weight(self, array=None, mode="resonator", sigma=0.1):
+    def add_weight(self, array=None, mode='resonator', sigma=0.1):
         if array is None:
             weight_x = np.linspace(-1, 1, len(self._datax))
             _sigma = sigma
@@ -365,13 +362,8 @@ class QFit:
             ax.plot(self._fitx, fit_value, "o", markersize=3, color=fit_color)
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
-            ax.plot(
-                self._fitx[0],
-                fit_value[0],
-                "o",
-                markersize=0,
-                label="{}: {:4.4}±{:4.4}".format(key, fit_params[key], str_none_if_none(error_params[key])),
-            )
+            ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
+                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
         # Rescale plot if user wants it:
         if plot_settings is not None:
             ax.set_xlabel(plot_settings.get("x_label", "x_label not set"))
