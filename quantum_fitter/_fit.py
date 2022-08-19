@@ -201,9 +201,6 @@ class QFit:
     def fit_values(self):
         return self.result.best_fit
 
-    def fit_residuals(self):
-        return self.result.fit_residuals
-
     def add_weight(self, array=None, mode='resonator', sigma=0.1):
         if array is None:
             weight_x = np.linspace(-1, 1, len(self._datax))
