@@ -764,7 +764,6 @@ def multi_entry(
     import quantum_fitter as qf
     import Labber as lab
     import quantum_fitter.standard_operating_functions as sof
-    from tqdm import tqdm
 
     file = lab.LogFile(path)
     filename = qf.get_file_name_from_path(path)
@@ -775,7 +774,7 @@ def multi_entry(
     rep, t2_array, t2_error, time_array, omega_array, omega_error = [], [], [], [], [], []
     entry_0 = file.getEntry(entry=0)["timestamp"] / 60
 
-    for i in tqdm(range(file.getNumberOfEntries())):
+    for i in range(file.getNumberOfEntries()):
         if i not in entry_mask:
             X, y = file.getTraceXY(entry=i)
 
@@ -830,7 +829,7 @@ def multi_entry(
                 for param, value in fit_guess.items():
                     t2.set_params(param, value)
 
-            t2.do_fit(verbose=verbose)
+            t2.do_fit()
 
             # plotting i entry
             if plot_i == True or i in plot_i:
