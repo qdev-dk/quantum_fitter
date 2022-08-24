@@ -25,7 +25,7 @@ class LabberData:
         self._fitValueHistory: List[Any] = []
         self._fitErrorHistory: List[Any] = []
         self._configChosen: List[Any] = []
-        self.mode = None
+        self.mode = mode
         self.average = 0
         self._channelChosen: List[Any] = []
 
@@ -173,6 +173,7 @@ class LabberData:
             t2.add_models('ConstantModel')
             t2.set_params('decay', 10)
             t2.do_fit(verbose=verbose)
+            print('hej')
             t2.pretty_print(plot_settings = {
                 'x_label': 'Sequence duration (us)',
                 'y_label': 'Voltage (uV)',

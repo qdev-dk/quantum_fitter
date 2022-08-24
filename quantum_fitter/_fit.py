@@ -633,7 +633,6 @@ def weighted_mean(data, errors):
         Chi2 (float): Chi2 of the arrays
         Chi2_prob (float): Chi2 Probability of the array
     """
-
     data = np.array(data)
     errors = np.array(errors)
     data = data[errors != None]
@@ -804,10 +803,6 @@ def multi_entry(
                 top = np.mean(y[0 : int(0.1 * len(y))])
                 t1_est = X[np.abs(y - top / 2).argmin()]
 
-                print(baseline)
-                print(top - baseline)
-                print(t1_est)
-
                 t2 = qf.QFit(X, y, model=Model(exp_func))
                 t2.set_params("T", t1_est)
                 t2.set_params("A", top - baseline)
@@ -844,7 +839,6 @@ def multi_entry(
                     },
                     x=0,
                 )
-
             t2_error.append(t2.err_params("T"))
             t2_array.append(t2.fit_params("T"))
             rep.append(i + 1)
@@ -879,7 +873,7 @@ def multi_entry(
     plt.errorbar(rep_good, t2_array_good, t2_error_good, fmt=".", color="red", ecolor="grey")
 
     if plot_mean:
-        mean, error, chi2, chi2_prob = weighted_mean(t2_array, t2_error)
+        mean, error, chi2, chi2_prob = weighted_mean(t2_array_good, t2_error_good)
         plt.axhline(y=mean, color="r", linestyle="-", label=f"weighted mean: {mean:.3} \u00B1 {error:.2}")
         plt.axhline(y=mean + error, color="grey", linestyle="--")
         plt.axhline(y=mean - error, color="grey", linestyle="--")
