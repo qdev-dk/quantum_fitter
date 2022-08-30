@@ -413,7 +413,7 @@ class QFit:
         fit_params, error_params = self.result.best_values, self._params_stderr()
         for key in fit_params.keys():
             ax.plot(self._datax[0], self._datay[0], 'o', markersize=0,
-                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
+                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key]))
         return ax
 
     def analytic_values_to_plot(self, nr_x_points: Optional[int] = None):
