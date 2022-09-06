@@ -212,7 +212,6 @@ class QFit:
 
     def do_fit(self, report=None):
         self._init_guess_params = self._params.copy()
-
         self.result = self._qmodel.fit(
             self._datay,
             self._params,
@@ -221,6 +220,7 @@ class QFit:
             weights=self.weight,
             nan_policy="omit",
         )
+
         self._params = self.result.params
         if report:
             print(self.result.fit_report())
@@ -363,8 +363,12 @@ class QFit:
             ax.plot(self._fitx, fit_value, "o", markersize=3, color=fit_color)
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
+            if not error_params[key]:
+                label_str = '{}: {:4.4f}±{}'.format(key, fit_params[key], error_params[key])
+            else:
+                label_str = '{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key])
             ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
-                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], str_none_if_none(error_params[key])))
+                    label=label_str)
         # Rescale plot if user wants it:
         if plot_settings is not None:
             ax.set_xlabel(plot_settings.get("x_label", "x_label not set"))
@@ -847,6 +851,7 @@ def multi_entry(
                 t2.set_params("A", top - baseline)
                 t2.set_params("c", baseline)
 
+
             if mode == "T2":
                 fit_type = r"$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$"
 
@@ -865,6 +870,8 @@ def multi_entry(
 
             t2.do_fit()
 
+      
+
             # plotting i entry
             if plot_i == True or i in plot_i:
                 t2.pretty_print(
@@ -878,6 +885,8 @@ def multi_entry(
                     },
                     x=0,
                 )
+        
+
             t2_error.append(t2.err_params("T"))
             t2_array.append(t2.fit_params("T"))
             rep.append(i + 1)
