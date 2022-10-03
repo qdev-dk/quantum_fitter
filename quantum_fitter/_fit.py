@@ -335,7 +335,8 @@ class QFit:
     def init_eval(self, xdata):
         return self.eval(self._init_guess_params, x=xdata)
 
-    def pretty_print(self, plot_settings=None, x=None):
+
+    def pretty_print(self, plot_settings=None, x=None, units=None):
         """Basic function for plotting the result of a fit"""
         if x is not None:
             if isinstance(x, int):
@@ -366,7 +367,12 @@ class QFit:
             if not error_params[key]:
                 label_str = '{}: {:4.4f}±{}'.format(key, fit_params[key], error_params[key])
             else:
-                label_str = '{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key])
+                if error_params[key] is not None:
+                    label_str = f"{key}: " + format_significant_digits(fit_params[key], error_params[key])
+                else:
+                    label_str = '{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key])
+            if isinstance(units, dict) and key in units.keys():
+                label_str += ' ' + units[key]
             ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
                     label=label_str)
         # Rescale plot if user wants it:
@@ -618,36 +624,59 @@ def str_none_if_none(stderr):
     else:
         return stderr
 
+def format_significant_digits(x, x_error):
+    power = int(np.floor(np.log10(x_error) - np.log10(0.95)))
+    rounded_err = 10**power*round(x_error*10**(-power))
+    rounded_x = 10**power*round(x*10**(-power))
+    if power <= 0:
+        s = f"{x:.{-power}f} ± {x_error:.{-power}f}"
+    else:
+        s = f"{int(rounded_x)} ± {int(rounded_err)}"
+    return s
 
-def oddfun_damped_oscillations_guess(x, y):
+
+def oddfun_damped_oscillations_guess(x, y, angular_frequency=True):
     # Adapted from QDev wrappers, `qdev_fitter`
-    from scipy import fftpack
+    from scipy import fft
+    dx = x[1] - x[0]
+    N = len(x)
 
     a = (y.max() - y.min()) / 2
     c = y.mean()
-    T = x[round(len(x) / 2)]
-    yhat = fftpack.rfft(y - y.mean())
-    idx = (yhat**2).argmax()
-    freqs = fftpack.rfftfreq(len(x), d=(x[1] - x[0]) / (2 * np.pi))
-    w = freqs[idx]
+    T = x[-1]
 
-    dx = x[1] - x[0]
-    indices_per_period = np.pi * 2 / w / dx
+    yf = fft.fft(y - y.mean())[:N//2]
+    xf = fft.fftfreq(N, dx)[:N//2]
+    idx = abs(yf).argmax()
+    omega = xf[idx]*2*np.pi
+    
+    indices_per_period = np.pi * 2 / omega / dx
     std_window = round(indices_per_period)
     initial_std = np.std(y[:std_window])
-    noise_level = np.std(y[-2 * std_window :])
+    noise_level = np.std(y[-2 * std_window:])
     for i in range(1, len(x) - std_window):
-        std = np.std(y[i : i + std_window])
+        std = np.std(y[i: i + std_window])
         if std < (initial_std - noise_level) * np.exp(-1):
             T = x[i]
             break
-    p = 0
-    return [a, T, w, p, c]
+    
+    phi = -np.angle(sum((y-c)*np.exp(1j*(omega*x - np.pi/2))))
+    print(phi)
+    if angular_frequency:
+        return [a, T, f, phi, c]
+    else:
+        f = omega/(2*np.pi)
+        return [a, T, omega, phi, c]
 
 
 def oddfun_damped_oscillations(x, A, T, omega, phi, c):
     # E.g. for fitting Rabis
-    return A * np.sin(omega * x + phi) * np.exp(-x / T) + c
+    return A * np.sin(omega * x + phi) * np.exp(-x / abs(T)) + c
+
+
+def oddfun_damped_oscillations_natural_freq(x, A, T, f, phi, c):
+    # E.g. for fitting Rabis
+    return A * np.sin(2*np.pi*f * x + phi) * np.exp(-x / abs(T)) + c
 
 
 def oddfun_oscillations(x, A, omega, phi, c):
@@ -867,7 +896,6 @@ def multi_entry(
                 t2.set_params("phi", p)
                 for param, value in fit_guess.items():
                     t2.set_params(param, value)
-
             t2.do_fit()
 
       
