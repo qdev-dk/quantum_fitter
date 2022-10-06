@@ -659,14 +659,13 @@ def oddfun_damped_oscillations_guess(x, y, angular_frequency=True):
         if std < (initial_std - noise_level) * np.exp(-1):
             T = x[i]
             break
-    
+        
     phi = -np.angle(sum((y-c)*np.exp(1j*(omega*x - np.pi/2))))
-    print(phi)
     if angular_frequency:
-        return [a, T, f, phi, c]
+        return [a, T, omega, phi, c]
     else:
         f = omega/(2*np.pi)
-        return [a, T, omega, phi, c]
+        return [a, T, f, phi, c]
 
 
 def oddfun_damped_oscillations(x, A, T, omega, phi, c):
