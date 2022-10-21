@@ -638,18 +638,25 @@ def format_significant_digits(x, x_error):
 def oddfun_damped_oscillations_guess(x, y, angular_frequency=True):
     # Adapted from QDev wrappers, `qdev_fitter`
     from scipy import fft
+    def _find_frequency_peak(x, y):
+        yf = fft.fft(y - y.mean())[:N//2]
+        xf = fft.fftfreq(N, dx)[:N//2]
+        idx = abs(yf).argmax()
+        print("ee", xf[idx]*2*np.pi)
+        if idx == 0 or idx == N//2 - 1:
+            return xf[idx]*2*np.pi
+        else:
+            omega_close_list = np.linspace(xf[idx-1], xf[idx+1])*2*np.pi
+            idx = np.argmax(([abs(sum(np.exp(1j*omega_close*x)*(y - y.mean()))) for omega_close in omega_close_list]))
+            return omega_close_list[idx]        
+
     dx = x[1] - x[0]
     N = len(x)
 
     a = (y.max() - y.min()) / 2
     c = y.mean()
-    T = x[-1]
-
-    yf = fft.fft(y - y.mean())[:N//2]
-    xf = fft.fftfreq(N, dx)[:N//2]
-    idx = abs(yf).argmax()
-    omega = xf[idx]*2*np.pi
-    
+    T = 3*x[-1]
+    omega = _find_frequency_peak(x, y)
     indices_per_period = np.pi * 2 / omega / dx
     std_window = round(indices_per_period)
     initial_std = np.std(y[:std_window])
@@ -659,13 +666,24 @@ def oddfun_damped_oscillations_guess(x, y, angular_frequency=True):
         if std < (initial_std - noise_level) * np.exp(-1):
             T = x[i]
             break
-        
-    phi = -np.angle(sum((y-c)*np.exp(1j*(omega*x - np.pi/2))))
+
+    phi = np.angle(sum((y[:std_window]-c)*np.exp(-1j*(omega*x[:std_window] - np.pi/2))))
     if angular_frequency:
         return [a, T, omega, phi, c]
     else:
         f = omega/(2*np.pi)
         return [a, T, f, phi, c]
+
+
+def exp_func_guess(x, y):
+    baseline = np.mean(y[-int(0.1 * len(y)) : -1])
+    top = y[0]
+    
+    A_guess = top-baseline
+    c_guess = baseline
+    T_guess = x[np.abs(y - baseline - A_guess*np.exp(-1)).argmin()]
+
+    return [A_guess, c_guess, T_guess]
 
 
 def oddfun_damped_oscillations(x, A, T, omega, phi, c):
