@@ -7,7 +7,15 @@ import quantum_fitter._model as md
 
 
 class QFit:
-    def __init__(self, data_x, data_y=None, model=None, params_init=None, method="least_squares", **kwargs):
+    def __init__(
+        self,
+        data_x,
+        data_y=None,
+        model=None,
+        params_init=None,
+        method="least_squares",
+        **kwargs,
+    ):
         self._raw_y = data_y.flatten()
         # data_y /= np.mean(np.abs(data_y)[[0, -1]])
         self._datax = data_x.flatten()
@@ -28,7 +36,9 @@ class QFit:
         # set initial value by using either list (in sequence of params) or dict (with name keys and value items)
         if isinstance(params_init, list):
             for n_params in range(len(params_init)):
-                self._params.add(self._qmodel.param_names[n_params], params_init[n_params])
+                self._params.add(
+                    self._qmodel.param_names[n_params], params_init[n_params]
+                )
         elif isinstance(params_init, dict):
             for para_name in params_init.keys():
                 self._params.add(para_name, params_init[para_name])
@@ -189,7 +199,9 @@ class QFit:
         self.wash(method="savgol", window_length=level, polyorder=3)
 
         # Do fit with the heavy filter result
-        _result = self._qmodel.fit(self._datay, self._params, x=self._datax, method=self.method)
+        _result = self._qmodel.fit(
+            self._datay, self._params, x=self._datax, method=self.method
+        )
         self._params = _result.params
         self._datay = self._raw_y
         self.eval(x=self._datax)
@@ -202,10 +214,10 @@ class QFit:
     def fit_values(self):
         return self.result.best_fit
 
-    def add_weight(self, array=None, mode='resonator', sigma=0.1):
+    def add_weight(self, array=None, mode="resonator", sigma=0.1):
         if array is None:
             weight_x = np.linspace(-1, 1, len(self._datax))
-            _sigma = sigma 
+            _sigma = sigma
             muu = weight_x[np.argmin(np.log10(self._datay))]
             self.weight = np.exp(-((weight_x - muu) ** 2 / (2.0 * _sigma**2)))
             self.weight = (self.weight + 0.1) / 1.1
@@ -243,10 +255,18 @@ class QFit:
 
         if method == "cut":
             _win = kwargs.get("window") if kwargs.get("window") else [1 / 3, 2 / 3]
-            self._datax = self._datax[int(len(self._datax) * _win[0]) : int(len(self._datax) * _win[1])]
-            self._datay = self._datay[int(len(self._datay) * _win[0]) : int(len(self._datay) * _win[1])]
-            self._fity = self._fity[int(len(self._fity) * _win[0]) : int(len(self._fity) * _win[1])]
-            self._raw_y = self._raw_y[int(len(self._raw_y) * _win[0]) : int(len(self._raw_y) * _win[1])]
+            self._datax = self._datax[
+                int(len(self._datax) * _win[0]) : int(len(self._datax) * _win[1])
+            ]
+            self._datay = self._datay[
+                int(len(self._datay) * _win[0]) : int(len(self._datay) * _win[1])
+            ]
+            self._fity = self._fity[
+                int(len(self._fity) * _win[0]) : int(len(self._fity) * _win[1])
+            ]
+            self._raw_y = self._raw_y[
+                int(len(self._raw_y) * _win[0]) : int(len(self._raw_y) * _win[1])
+            ]
 
         if method == "linearcomp":
             s = (self._datay[-1] - self._datay[0]) / (self._datax[-1] - self._datax[0])
@@ -264,7 +284,9 @@ class QFit:
         if method == "complexcomp":
             # inspired and from David's code
             _window = (
-                int(kwargs.get("window") * len(self._datax)) if kwargs.get("window") else int(0.06 * len(self._datax))
+                int(kwargs.get("window") * len(self._datax))
+                if kwargs.get("window")
+                else int(0.06 * len(self._datax))
             )
             phase = np.unwrap(np.angle(self._datay))
             line_fit = np.polyfit(
@@ -292,12 +314,16 @@ class QFit:
                 xfi = rfftfreq(len(self._datay.imag), 1 / len(self._datay.imag))
 
                 target_idx = int(len(xf) / 64)
-                yf[target_idx:] = savgol_filter(yf[target_idx:], window_length=5, polyorder=3)
+                yf[target_idx:] = savgol_filter(
+                    yf[target_idx:], window_length=5, polyorder=3
+                )
                 # yf[target_idx:] = 0
                 self._datay = irfft(yf).astype("complex128")
 
                 target_idx = int(len(xfi) / 64)
-                yfi[target_idx:] = savgol_filter(yfi[target_idx:], window_length=5, polyorder=3)
+                yfi[target_idx:] = savgol_filter(
+                    yfi[target_idx:], window_length=5, polyorder=3
+                )
                 # yfi[target_idx:] = 0
                 self._datay += 1j * irfft(yfi).astype("complex128")
                 self._datay = np.append(self._datay, self._datay[-1])
@@ -335,7 +361,6 @@ class QFit:
     def init_eval(self, xdata):
         return self.eval(self._init_guess_params, x=xdata)
 
-
     def pretty_print(self, plot_settings=None, x=None, units=None):
         """Basic function for plotting the result of a fit"""
         if x is not None:
@@ -348,16 +373,36 @@ class QFit:
             fit_value = self.fit_y
             self._fitx = self._datax
         fit_params, error_params = self.result.best_values, self._params_stderr()
-        _fig_size = (8, 6) if plot_settings is None else plot_settings.get("fig_size", (8, 6))
+        _fig_size = (
+            (8, 6) if plot_settings is None else plot_settings.get("fig_size", (8, 6))
+        )
         self._fig, ax = plt.subplots(1, 1, figsize=_fig_size)
         # Add the original data
-        data_color = "C0" if plot_settings is None else plot_settings.get("data_color", "C0")
-        ax.plot(self._datax, self._datay, ".", label="Data", color=data_color, markersize=10, zorder=10)
+        data_color = (
+            "C0" if plot_settings is None else plot_settings.get("data_color", "C0")
+        )
+        ax.plot(
+            self._datax,
+            self._datay,
+            ".",
+            label="Data",
+            color=data_color,
+            markersize=10,
+            zorder=10,
+        )
 
         if plot_settings.get("plot_guess", None) is not None:
-            ax.plot(self._fitx, self.init_eval(self._fitx), "--", label="inital fit", c="#d1d1e0")
+            ax.plot(
+                self._fitx,
+                self.init_eval(self._fitx),
+                "--",
+                label="inital fit",
+                c="#d1d1e0",
+            )
 
-        fit_color = "gray" if plot_settings is None else plot_settings.get("fit_color", "k")
+        fit_color = (
+            "gray" if plot_settings is None else plot_settings.get("fit_color", "k")
+        )
         # Add fitting curve:
         ax.plot(self._fitx, fit_value, "-", linewidth=1, label="Fit", color=fit_color)
         if x is None:
@@ -365,16 +410,21 @@ class QFit:
         # Hack to add legend with fit-params:
         for key in fit_params.keys():
             if not error_params[key]:
-                label_str = '{}: {:4.4f}±{}'.format(key, fit_params[key], error_params[key])
+                label_str = "{}: {:4.4f}±{}".format(
+                    key, fit_params[key], error_params[key]
+                )
             else:
                 if error_params[key] is not None:
-                    label_str = f"{key}: " + format_significant_digits(fit_params[key], error_params[key])
+                    label_str = f"{key}: " + format_significant_digits(
+                        fit_params[key], error_params[key]
+                    )
                 else:
-                    label_str = '{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key])
+                    label_str = "{}: {:4.4f}±{:4.4f}".format(
+                        key, fit_params[key], error_params[key]
+                    )
             if isinstance(units, dict) and key in units.keys():
-                label_str += ' ' + units[key]
-            ax.plot(self._fitx[0], fit_value[0], 'o', markersize=0,
-                    label=label_str)
+                label_str += " " + units[key]
+            ax.plot(self._fitx[0], fit_value[0], "o", markersize=0, label=label_str)
         # Rescale plot if user wants it:
         if plot_settings is not None:
             ax.set_xlabel(plot_settings.get("x_label", "x_label not set"))
@@ -385,45 +435,68 @@ class QFit:
                 ax.set_ylim(plot_settings["y_lim"])
 
         ax.legend()
-        title = "Data source not given" if plot_settings is None else plot_settings.get("plot_title", "no name given")
+        title = (
+            "Data source not given"
+            if plot_settings is None
+            else plot_settings.get("plot_title", "no name given")
+        )
         fit_type = (
-            str(self._qmodel.name) if plot_settings is None else plot_settings.get("fit_type", str(self._qmodel.name))
+            str(self._qmodel.name)
+            if plot_settings is None
+            else plot_settings.get("fit_type", str(self._qmodel.name))
         )
         ax.set_title("Datasource: " + title + "\n Fit type: " + fit_type)
         # Check if use wants figure and return if needed:
         if plot_settings is None or plot_settings.get("show_fig", None) is None:
             plt.show()
 
-        if plot_settings is not None and plot_settings.get("return_fig", None) is not None:
+        if (
+            plot_settings is not None
+            and plot_settings.get("return_fig", None) is not None
+        ):
             return self._fig, ax
 
-    def my_pretty_print(self, plot_settings=None, nr_x_points=None, title='', **kwargs):
-        '''Basic function for plotting the result of a fit'''
+    def my_pretty_print(self, plot_settings=None, nr_x_points=None, title="", **kwargs):
+        """Basic function for plotting the result of a fit"""
         fig, ax = plt.subplots(1, 1, figsize=(8, 6), **kwargs)
         ax = self.plot_data(ax, **kwargs)
         ax = self.plot_analytic_fit(ax, **kwargs)
         ax = self.add_fit_and_error_params(ax, **kwargs)
         ax.legend()
         fit_type = str(self._qmodel.name)
-        ax.set_title('title' + '\n Fit type: ' + fit_type)
+        ax.set_title("title" + "\n Fit type: " + fit_type)
         plt.show()
         return fig, ax
 
-    def plot_data(self, ax, data_color='C0', **kwargs):
-        ax.plot(self._datax, self._datay, '.',
-                label='Data', color=data_color, markersize=10, zorder=10)
+    def plot_data(self, ax, data_color="C0", **kwargs):
+        ax.plot(
+            self._datax,
+            self._datay,
+            ".",
+            label="Data",
+            color=data_color,
+            markersize=10,
+            zorder=10,
+        )
         return ax
 
-    def plot_analytic_fit(self, ax, fit_color='gray', nr_x_points=None, **kwargs):
-        x_values, fit_values = self.analytic_values_to_plot(nr_x_points)        
-        ax.plot(x_values, fit_values, '-', linewidth=1, label='Fit', color=fit_color)
+    def plot_analytic_fit(self, ax, fit_color="gray", nr_x_points=None, **kwargs):
+        x_values, fit_values = self.analytic_values_to_plot(nr_x_points)
+        ax.plot(x_values, fit_values, "-", linewidth=1, label="Fit", color=fit_color)
         return ax
 
     def add_fit_and_error_params(self, ax):
         fit_params, error_params = self.result.best_values, self._params_stderr()
         for key in fit_params.keys():
-            ax.plot(self._datax[0], self._datay[0], 'o', markersize=0,
-                    label='{}: {:4.4f}±{:4.4f}'.format(key, fit_params[key], error_params[key]))
+            ax.plot(
+                self._datax[0],
+                self._datay[0],
+                "o",
+                markersize=0,
+                label="{}: {:4.4f}±{:4.4f}".format(
+                    key, fit_params[key], error_params[key]
+                ),
+            )
         return ax
 
     def analytic_values_to_plot(self, nr_x_points: Optional[int] = None):
@@ -436,21 +509,38 @@ class QFit:
             return x_values, fit_values
 
     def polar_plot(self, plot_settings={}, power=99999, f0=None, id=None, suptitle=""):
-        angle = np.exp(-1j * (self._datax * self.result.params["phi1"] + self.result.params["phi2"]))
+        angle = np.exp(
+            -1j
+            * (self._datax * self.result.params["phi1"] + self.result.params["phi2"])
+        )
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(10, 3))
         ax1.plot(self._fity.real, self._fity.imag, "r", label="best fit", linewidth=1.5)
         ax1.scatter(self._raw_y.real, self._raw_y.imag, c="grey", s=1)
-        ax1.set_title("Raw S21 Complex Plane", fontdict={"size": 10})
+        ax1.set_title("Raw S21 Complex Plane", fontdict={"fontsize": 10})
         ax1.set_xlabel("Re(S21)")
         ax1.set_ylabel("Im(S21)")
 
-        ax2.plot((self._fity * angle).real, (self._fity * angle).imag, "r", label="best fit", linewidth=1.5)
-        ax2.scatter((self._raw_y * angle).real, (self._raw_y * angle).imag, c="grey", s=1)
+        ax2.plot(
+            (self._fity * angle).real,
+            (self._fity * angle).imag,
+            "r",
+            label="best fit",
+            linewidth=1.5,
+        )
+        ax2.scatter(
+            (self._raw_y * angle).real, (self._raw_y * angle).imag, c="grey", s=1
+        )
         ax2.set_title("Raw S21 Complex Plane", fontdict={"fontsize": 10})
         ax2.set_xlabel("Re(S21)")
         ax2.set_ylabel("Im(S21)")
 
-        ax3.plot(self._datax, 20 * np.log10(np.abs(self._fity)), "r", label="best fit", linewidth=1.5)
+        ax3.plot(
+            self._datax,
+            20 * np.log10(np.abs(self._fity)),
+            "r",
+            label="best fit",
+            linewidth=1.5,
+        )
         ax3.scatter(self._datax, 20 * np.log10(np.abs(self._raw_y)), c="grey", s=1)
         ax3.scatter(
             self._datax[np.argmin(20 * np.log10(np.abs(self._raw_y)))],
@@ -463,7 +553,13 @@ class QFit:
         ax3.set_ylabel("S21(dB)")
         ax3.ticklabel_format(useOffset=False)
 
-        ax4.plot(self._datax, np.angle(self._fity * angle), "r", label="best fit", linewidth=1.5)
+        ax4.plot(
+            self._datax,
+            np.angle(self._fity * angle),
+            "r",
+            label="best fit",
+            linewidth=1.5,
+        )
         ax4.scatter(self._datax, np.angle(self._raw_y * angle), c="grey", s=1)
         ax4.set_title("S21 Phase", fontdict={"fontsize": 10})
         ax4.set_xlabel("Frequency / GHz")
@@ -471,8 +567,12 @@ class QFit:
         ax4.ticklabel_format(useOffset=False)
 
         # if self._qmodel.name == 'ResonatorModel':
-        fit_info = "$Q_{int}= $" + str("{0:.1f}".format(self.fit_params("Qi") * 1e3)) + "    "
-        fit_info += "$Q_{ext}= $" + str("{0:.1f}".format(self.fit_params("Qe_mag") * 1e3))
+        fit_info = (
+            "$Q_{int}= $" + str("{0:.1f}".format(self.fit_params("Qi") * 1e3)) + "    "
+        )
+        fit_info += "$Q_{ext}= $" + str(
+            "{0:.1f}".format(self.fit_params("Qe_mag") * 1e3)
+        )
         # if self._qmodel.name == 'ResonatorModel':
         #     Qe = self.fit_params('Q_e_real') + 1j * self.fit_params('Q_e_imag')
         #     Qi = 1 / (1 / self.fit_params('Q') - 1 / self.fit_params('Q_e_real')) * 1e3
@@ -486,11 +586,23 @@ class QFit:
         if id:
             fit_info += "    " + "id= " + str(id)
 
-        fig.suptitle(suptitle + "\n" + fit_info, fontdict={"fontsize": 10})
+        fig.suptitle(suptitle + "\n" + fit_info)
 
         if plot_settings.get("plot_guess", None) is not None:
-            ax1.plot(self._init_guess_y.real, self._init_guess_y.imag, "--", label="inital fit", c="#d1d1e0")
-            ax3.plot(self._datax, 20 * np.log10(np.abs(self._init_guess_y)), "--", label="inital fit", c="#d1d1e0")
+            ax1.plot(
+                self._init_guess_y.real,
+                self._init_guess_y.imag,
+                "--",
+                label="inital fit",
+                c="#d1d1e0",
+            )
+            ax3.plot(
+                self._datax,
+                20 * np.log10(np.abs(self._init_guess_y)),
+                "--",
+                label="inital fit",
+                c="#d1d1e0",
+            )
 
         fig.tight_layout()
 
@@ -545,7 +657,9 @@ def params(name: str):
 def read_dat(file_location: str, power):
     import pandas as pd
 
-    df = pd.read_csv(file_location, delimiter="\t", header=0, skiprows=lambda x: x in [0, 2])
+    df = pd.read_csv(
+        file_location, delimiter="\t", header=0, skiprows=lambda x: x in [0, 2]
+    )
     df.columns = ["Power"] + list(df.columns[1:])
     _power = df["Power"].to_numpy()
     _power_mask = np.argwhere(_power == power)  # Choose the power you fit
@@ -563,7 +677,9 @@ def read_dat(file_location: str, power):
 def resonator_fit_all(file_location: str, power_limit=None):
     import pandas as pd
 
-    df = pd.read_csv(file_location, delimiter="\t", header=0, skiprows=lambda x: x in [0, 2])
+    df = pd.read_csv(
+        file_location, delimiter="\t", header=0, skiprows=lambda x: x in [0, 2]
+    )
     df.columns = ["Power"] + list(df.columns[1:])
     power = df["Power"].unique()
     Qi_list, Qi_err = [], []
@@ -612,8 +728,12 @@ def resonator_fit_all(file_location: str, power_limit=None):
     ax2.errorbar(power, Qe_list, yerr=Qe_err, fmt="x", c="c", label="Qe")
     ax2.set_ylabel("$Q_{ext}$", fontsize=14, c="c")
     ax.legend(loc="lower left")
-    ax.set_ylim(top=1.1 * max(Qi_list) if max(Qi_list) < 1e7 else 1e6, bottom=0.9 * min(Qi_list))
-    ax2.set_ylim(top=1.1 * max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9 * min(Qe_list))
+    ax.set_ylim(
+        top=1.1 * max(Qi_list) if max(Qi_list) < 1e7 else 1e6, bottom=0.9 * min(Qi_list)
+    )
+    ax2.set_ylim(
+        top=1.1 * max(Qe_list) if max(Qe_list) < 1e7 else 1e6, bottom=0.9 * min(Qe_list)
+    )
     plt.tight_layout()
     plt.show()
 
@@ -624,64 +744,78 @@ def str_none_if_none(stderr):
     else:
         return stderr
 
+
 def format_significant_digits(x, x_error):
+    from math import isnan
+
+    if isnan(x_error):
+        return f"{x} ± Nan"
     power = int(np.floor(np.log10(x_error) - np.log10(0.95)))
-    rounded_err = 10**power*round(x_error*10**(-power))
-    rounded_x = 10**power*round(x*10**(-power))
-    if power <= 0:
-        s = f"{x:.{-power}f} ± {x_error:.{-power}f}"
-    else:
-        s = f"{int(rounded_x)} ± {int(rounded_err)}"
-    return s
+    rounded_err = 10**power * round(x_error * 10 ** (-power))
+    rounded_x = 10**power * round(x * 10 ** (-power))
+    return (
+        f"{x:.{-power}f} ± {x_error:.{-power}f}"
+        if power <= 0
+        else f"{int(rounded_x)} ± {int(rounded_err)}"
+    )
 
 
 def oddfun_damped_oscillations_guess(x, y, angular_frequency=True):
     # Adapted from QDev wrappers, `qdev_fitter`
     from scipy import fft
+
     def _find_frequency_peak(x, y):
-        yf = fft.fft(y - y.mean())[:N//2]
-        xf = fft.fftfreq(N, dx)[:N//2]
+        yf = fft.fft(y - y.mean())[: N // 2]
+        xf = fft.fftfreq(N, dx)[: N // 2]
         idx = abs(yf).argmax()
-        print("ee", xf[idx]*2*np.pi)
-        if idx == 0 or idx == N//2 - 1:
-            return xf[idx]*2*np.pi
+        if idx == 0 or idx == N // 2 - 1:
+            return xf[idx] * 2 * np.pi
         else:
-            omega_close_list = np.linspace(xf[idx-1], xf[idx+1])*2*np.pi
-            idx = np.argmax(([abs(sum(np.exp(1j*omega_close*x)*(y - y.mean()))) for omega_close in omega_close_list]))
-            return omega_close_list[idx]        
+            omega_close_list = np.linspace(xf[idx - 1], xf[idx + 1]) * 2 * np.pi
+            idx = np.argmax(
+                (
+                    [
+                        abs(sum(np.exp(1j * omega_close * x) * (y - y.mean())))
+                        for omega_close in omega_close_list
+                    ]
+                )
+            )
+            return omega_close_list[idx]
 
     dx = x[1] - x[0]
     N = len(x)
 
     a = (y.max() - y.min()) / 2
     c = y.mean()
-    T = 3*x[-1]
+    T = 3 * x[-1]
     omega = _find_frequency_peak(x, y)
     indices_per_period = np.pi * 2 / omega / dx
     std_window = round(indices_per_period)
     initial_std = np.std(y[:std_window])
-    noise_level = np.std(y[-2 * std_window:])
+    noise_level = np.std(y[-2 * std_window :])
     for i in range(1, len(x) - std_window):
-        std = np.std(y[i: i + std_window])
+        std = np.std(y[i : i + std_window])
         if std < (initial_std - noise_level) * np.exp(-1):
             T = x[i]
             break
 
-    phi = np.angle(sum((y[:std_window]-c)*np.exp(-1j*(omega*x[:std_window] - np.pi/2))))
+    phi = np.angle(
+        sum((y[:std_window] - c) * np.exp(-1j * (omega * x[:std_window] - np.pi / 2)))
+    )
     if angular_frequency:
         return [a, T, omega, phi, c]
     else:
-        f = omega/(2*np.pi)
+        f = omega / (2 * np.pi)
         return [a, T, f, phi, c]
 
 
 def exp_func_guess(x, y):
     baseline = np.mean(y[-int(0.1 * len(y)) : -1])
     top = y[0]
-    
-    A_guess = top-baseline
+
+    A_guess = top - baseline
     c_guess = baseline
-    T_guess = x[np.abs(y - baseline - A_guess*np.exp(-1)).argmin()]
+    T_guess = x[np.abs(y - baseline - A_guess * np.exp(-1)).argmin()]
 
     return [A_guess, c_guess, T_guess]
 
@@ -693,7 +827,7 @@ def oddfun_damped_oscillations(x, A, T, omega, phi, c):
 
 def oddfun_damped_oscillations_natural_freq(x, A, T, f, phi, c):
     # E.g. for fitting Rabis
-    return A * np.sin(2*np.pi*f * x + phi) * np.exp(-x / abs(T)) + c
+    return A * np.sin(2 * np.pi * f * x + phi) * np.exp(-x / abs(T)) + c
 
 
 def oddfun_oscillations(x, A, omega, phi, c):
@@ -859,7 +993,14 @@ def multi_entry(
     if plot_i == False:
         plot_i = []
 
-    rep, t2_array, t2_error, time_array, omega_array, omega_error = [], [], [], [], [], []
+    rep, t2_array, t2_error, time_array, omega_array, omega_error = (
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
     entry_0 = file.getEntry(entry=0)["timestamp"] / 60
 
     for i in range(file.getNumberOfEntries()):
@@ -877,7 +1018,9 @@ def multi_entry(
             if use_phase:
                 y = np.angle(y)
             else:
-                angle = sof.calcRotationAngle(y)  # find angle in radians to rotate data by
+                angle = sof.calcRotationAngle(
+                    y
+                )  # find angle in radians to rotate data by
                 y = np.real(np.exp(1j * angle) * y)
 
             if mask != False:
@@ -897,12 +1040,10 @@ def multi_entry(
                 t2.set_params("A", top - baseline)
                 t2.set_params("c", baseline)
 
-
             if mode == "T2":
                 fit_type = r"$A \times exp(-x/T) \times sin(\omega x + \varphi) + c$"
 
                 a, T, w, p, c = oddfun_damped_oscillations_guess(X, y)
-                print(a, T, w, p, c)
 
                 # fitting
                 t2 = qf.QFit(X, y, model=Model(oddfun_damped_oscillations))
@@ -914,8 +1055,6 @@ def multi_entry(
                 for param, value in fit_guess.items():
                     t2.set_params(param, value)
             t2.do_fit()
-
-      
 
             # plotting i entry
             if plot_i == True or i in plot_i:
@@ -930,7 +1069,6 @@ def multi_entry(
                     },
                     x=0,
                 )
-        
 
             t2_error.append(t2.err_params("T"))
             t2_array.append(t2.fit_params("T"))
@@ -938,8 +1076,6 @@ def multi_entry(
             if mode == "T2":
                 omega_array.append(t2.fit_params("omega"))
                 omega_error.append(t2.err_params("omega"))
-
-    # print(mean,'\u00B1', error)
 
     fig, ax = plt.subplots(figsize=figsize)
     ax.set_xlabel("Repetitions"), ax.set_ylabel(f"{mode} decay (\u03BCs)")
@@ -963,11 +1099,18 @@ def multi_entry(
     t2_array_good = t2_array_good[good_indices]
     t2_error_good = t2_error_good[good_indices]
 
-    plt.errorbar(rep_good, t2_array_good, t2_error_good, fmt=".", color="red", ecolor="grey")
+    plt.errorbar(
+        rep_good, t2_array_good, t2_error_good, fmt=".", color="red", ecolor="grey"
+    )
 
     if plot_mean:
         mean, error, chi2, chi2_prob = weighted_mean(t2_array_good, t2_error_good)
-        plt.axhline(y=mean, color="r", linestyle="-", label=f"weighted mean: {mean:.3} \u00B1 {error:.2}")
+        plt.axhline(
+            y=mean,
+            color="r",
+            linestyle="-",
+            label=f"weighted mean: {mean:.3} \u00B1 {error:.2}",
+        )
         plt.axhline(y=mean + error, color="grey", linestyle="--")
         plt.axhline(y=mean - error, color="grey", linestyle="--")
         plt.ylim([0, np.max(mean) * 2])
