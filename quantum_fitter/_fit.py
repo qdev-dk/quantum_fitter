@@ -223,6 +223,9 @@ class QFit:
             self.weight = (self.weight + 0.1) / 1.1
 
     def do_fit(self, report=None):
+        minlen=min(len(self._datay), len(self._datax))
+        self._datay = self._datay[:minlen]
+        self._datax = self._datax[:minlen]
         self._init_guess_params = self._params.copy()
         self.result = self._qmodel.fit(
             self._datay,
